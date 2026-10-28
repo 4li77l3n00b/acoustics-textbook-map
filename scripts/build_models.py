@@ -136,6 +136,9 @@ def main():
                             'models': f.get('models', '').split(), 'goal': f.get('goal', ''), 'note': f.get('note', ''),
                             'steps': [{'title': h, 'body': body} for h, body in parts]})
 
+    # list derivations in book order (by their first section)
+    order = {n['id']: i for i, n in enumerate(json.loads((TB / 'toc.json').read_text(encoding='utf-8'))['nodes'])}
+    derivations.sort(key=lambda d: order.get(d['nodes'][0], 10**6) if d['nodes'] else 10**6)
     errors += katex_check(snippets)
     out = {'steps': STEPS, 'models': models, 'relations': relations, 'derivations': derivations,
            'eqs': {k: [u, p] for k, (u, p, _) in eqs.items()}}
