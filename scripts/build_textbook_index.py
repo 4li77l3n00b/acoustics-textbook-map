@@ -34,6 +34,7 @@ DROP = {'header', 'number', 'header_image', 'footer', 'footer_image'}
 HEAD_LABELS = {'paragraph_title', 'doc_title', 'text', 'content'}
 TOC_LINE = re.compile(r'^(?P<t>.*?\S)\s*(?:\.{2,}|…+|\s)\s*(?P<p>\d{1,3})\s*$')
 EXAMPLE = re.compile(r'^\s*#*\s*例\s*(\d{1,2})(?!\d)')
+FIGCAP = re.compile(r'^图\s*习题\s*(\d{1,2})\s*[-－—–~～]\s*(\d{1,2})$')
 # "2-18 …" starts an exercise; "1-4-22" is an equation number, not an exercise
 EXERCISE = re.compile(r'^\s*(\d{1,2})\s*[-－—–~～]\s*(\d{1,2})(?!\s*[-－—–]\s*\d)(?!\d)')
 # regions the OCR did not detect at all (found by scanning for uncovered vertical gaps), keyed by pdf page
@@ -240,7 +241,7 @@ def find_examples(blocks, nodes):
 
 def find_exercises(blocks):
     """Items "n-m" inside each chapter's exercise set; a block may hold the end of one item and the start of the next."""
-    out, cur = [], None
+    out, cur, figs = [], None, {}
     for b in blocks:
         if b['zone'] != 'exercises':
             cur = None
@@ -255,7 +256,15 @@ def find_exercises(blocks):
             if cur:
                 if b['uid'] not in cur['blocks']:
                     cur['blocks'].append(b['uid'])
-                if b['label'] in ('text', 'display_formula', 'formula_number', 'table', 'figure_title'):
+                if b['label'] == 'figure_title':
+                    # captions "图 习题 n-m" are laid out after the next item's text: give them to the item they name
+                    cap = re.sub(r'<[^>]+>', ' ', piece)
+                    cap = re.sub(r'\s+', ' ', cap).strip()
+                    if (fm := FIGCAP.match(cap)):
+                        figs.setdefault(f'{fm[1]}-{int(fm[2])}', []).append({'caption': cap, 'uid': b['uid']})
+                    elif cap:
+                        cur['text'].append(cap)
+                elif b['label'] in ('text', 'display_formula', 'formula_number', 'table'):
                     cur['text'].append(piece.strip())
         if cur:
             b['exercise'] = cur['id']
@@ -263,6 +272,7 @@ def find_exercises(blocks):
         x['end'] = x['blocks'][-1]
         x['pdf_pages'] = sorted({int(u.split('-p')[1][:3]) for u in x['blocks']})
         x['text'] = '\n'.join(t for t in x['text'] if t)
+        x['figs'] = figs.get(x['id'], [])
         del x['blocks']
     return out
 

@@ -88,7 +88,7 @@ def main():
         'book': {'id': toc['book'], 'name': toc['name'], 'offset': toc['offset'], 'nodes': toc['nodes'], 'pages': pages},
         'blocks': slim,
         'examples': examples,
-        'exercises': [dict({k: x[k] for k in ('id', 'chapter', 'num', 'start', 'pdf_pages', 'text')},
+        'exercises': [dict({k: x[k] for k in ('id', 'chapter', 'num', 'start', 'pdf_pages', 'text', 'figs')},
                            nodes=(solutions.get(x['id']) or {}).get('uses', [])) for x in exercises],
         'solutions': solutions,
         'papers': exams['papers'],

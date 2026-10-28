@@ -341,7 +341,7 @@ function exerciseDetail(x) {
     <h1 class="ttl">习题 ${x.id} <span class="lv lv-${l.level}">${l.level || ''}</span></h1>
     <div class="meta"><span class="muted small">第 ${x.chapter} 章 · ${esc(l.reason || '')}</span></div>
     <div class="qtext">${text}</div>
-    <p class="small">${readLink(x.start, '看原书题目与插图')}</p>
+    <p class="small">${[readLink(x.start, '看原书题目'), ...(x.figs || []).map(f => readLink(f.uid, '看' + f.caption))].join('　')}</p>
     ${used.length ? `<h2>以它为原型的真题</h2><ul class="links">${used.map(q => `<li><a data-q="${q.id}">${q.id}</a> <span class="muted">${esc(cut(q.text.split('\n')[0], 60))}</span></li>`).join('')}</ul>` : ''}
     <h2>解答</h2>${solHtml(x.id)}`;
 }
