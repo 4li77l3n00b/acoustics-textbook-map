@@ -208,6 +208,7 @@ const Demo = (() => {
       if (window.renderMathInElement) try { renderMathInElement(noteEl, { throwOnError: false, delimiters: [{ left: '$', right: '$', display: false }] }); } catch (e) { /* plain text */ }
     };
     const draw = () => { g.clear(); spec.draw(g, p, S, t); };
+    S.redraw = draw;  // 3D views redraw while being dragged, even when paused
     const rebuild = () => { ctlWrap.innerHTML = ''; ctlWrap.appendChild(controls(spec, p, changed)); };
     function changed(structural) {
       if (spec.setup) spec.setup(p, S, g);
@@ -254,10 +255,13 @@ const Demo = (() => {
     interference: 'coherence', tube: 'plane:part', junction: 'interface:duct', waveguide: 'waveguide:rect', sphere: 'sphere', dipole: 'sources:dip', array: 'sources:line',
     receiver: 'mic:polar', scatter: 'scatter', 'room-stat': 'roomstat:decay', 'room-mode': 'roommode:mode', solid: 'solid:R',
   };
-  const box = (key, open) => key && reg[key.split(':')[0]]
-    ? `<details class="demo-box"${open ? ' open' : ''}><summary>动画演示：${esc(reg[key.split(':')[0]].title)}</summary><div class="demo" data-demo="${key}"></div></details>` : '';
+  // a derivation / model may map to several demos (a 2D one and a 3D one): "id:preset" or [..]
+  const box = (keys, open) => [].concat(keys || []).filter(k => reg[k.split(':')[0]]).map(key => {
+    const spec = reg[key.split(':')[0]];
+    return `<details class="demo-box"${open ? ' open' : ''}><summary>${spec.is3d ? '三维演示' : '动画演示'}：${esc(spec.title)}</summary><div class="demo" data-demo="${key}"></div></details>`;
+  }).join('');
   return {
-    reg, M,
+    reg, M, DEMO_FOR, DEMO_MODEL,
     forDerivation: (id, open = true) => box(DEMO_FOR[id], open),
     forModel: (id, open = true) => box(DEMO_MODEL[id], open),
     has: id => !!DEMO_FOR[id],
