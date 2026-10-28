@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>声学基础考点</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="vendor/katex/katex.min.css" onerror="this.remove()">
+<link rel="preload" href="vendor/katex/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="vendor/katex/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand">声学基础考点</div>
+  <nav id="tabs">
+    <a data-view="terms" title="名词解释（Alt+1）">名词</a>
+    <a data-view="kp" title="知识点：按教材小节汇总评级、名词、真题、习题与例题（Alt+2）">知识点</a>
+    <a data-view="models" title="物理模型 × 解题环节矩阵，模型之间的类比、退化、互易关系（Alt+3）">模型</a>
+    <a data-view="derive" title="推导默写：逐步遮挡，先回忆再展开（Alt+4）">推导</a>
+    <a data-view="syllabus" title="考纲地图：考纲条目、小节评级、出题分布、习题分档（Alt+5）">考纲</a>
+    <a data-view="exams" title="真题与课后重要习题，含解答（Alt+6）">真题与习题</a>
+    <a data-view="read" title="教材阅读（Alt+7）">教材</a>
+  </nav>
+  <button id="fxBtn" class="fxbtn" title="公式速查：常数、各章常用公式、特殊函数值、分贝运算（Alt+F）">∑ 公式</button>
+  <div class="note muted small" id="topnote"></div>
+</header>
+<main id="main">
+  <section id="v-terms" class="view split">
+    <aside class="list" id="termList"></aside>
+    <article class="detail" id="termDetail"></article>
+  </section>
+  <section id="v-kp" class="view split">
+    <aside class="list" id="kpList"></aside>
+    <article class="detail" id="kpDetail"></article>
+  </section>
+  <section id="v-models" class="view split">
+    <aside class="list" id="modelList"></aside>
+    <article class="detail" id="modelDetail"></article>
+  </section>
+  <section id="v-derive" class="view split">
+    <aside class="list" id="deriveList"></aside>
+    <article class="detail" id="deriveDetail"></article>
+  </section>
+  <section id="v-syllabus" class="view scroll"><div class="page" id="sylPage"></div></section>
+  <section id="v-exams" class="view split">
+    <aside class="list" id="examList"></aside>
+    <article class="detail" id="examDetail"></article>
+  </section>
+  <section id="v-read" class="view">
+    <aside id="toc"></aside>
+    <div id="reader"><div class="rbar" id="rbar"></div><div id="pageWrap"></div></div>
+    <aside id="side"></aside>
+  </section>
+</main>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/contrib/auto-render.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="formulas.js"></script>
+</body>
+</html>
