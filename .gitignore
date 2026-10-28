@@ -26,6 +26,7 @@ output/viz/*
 !output/viz/app.js
 !output/viz/style.css
 !output/viz/formulas.js
+!output/viz/resume.js
 !output/viz/vendor/
 
 # caches, logs, build outputs
