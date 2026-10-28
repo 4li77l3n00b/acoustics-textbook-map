@@ -204,3 +204,18 @@ a.eq { white-space: nowrap; }
 #fx.hide .fx-it { cursor: pointer; }
 #fx.hide .fx-it:not(.show) .fx-f { filter: blur(7px); opacity: .45; }
 #fx.hide .fx-it:not(.show):hover .fx-f { opacity: .6; }
+
+/* interactive demos (demos*.js) */
+details.demo-box { margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+details.demo-box > summary { cursor: pointer; padding: 8px 12px; font-weight: 600; color: var(--accent); }
+.demo { padding: 0 10px 10px; }
+.demo-hd { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; font-size: 13px; }
+.demo-hd b { flex: 1; font-weight: 500; color: var(--muted); }
+.demo-btns { display: flex; gap: 4px; }
+.demo-btns button { padding: 1px 8px; font-size: 12px; }
+.demo canvas { display: block; border-radius: 6px; background: var(--panel); }
+.demo-ctl { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0 4px; font-size: 12.5px; align-items: center; }
+.demo-ctl label { display: flex; align-items: center; gap: 6px; }
+.demo-ctl input[type=range] { width: 150px; }
+.demo-ctl output { min-width: 3.5em; font-variant-numeric: tabular-nums; color: var(--accent); }
+.demo-note { font-size: 13px; line-height: 1.7; color: var(--ink); margin-top: 4px; }

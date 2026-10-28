@@ -522,6 +522,7 @@ function modelCard(m) {
   return `<div class="meta"><button data-mstepnav="-1" ${i <= 2 ? 'disabled' : ''}>↑ 上一个</button><button data-mstepnav="1" ${i < 0 || i >= MV.order.length - 1 ? 'disabled' : ''}>下一个 ↓</button></div>
     <h1 class="ttl">${esc(m.name)} ${stars({ stars: mStars(m) })}</h1>
     <div class="def" style="font-size:15px">${linkEq(esc(m.brief))}</div>
+    ${window.Demo ? Demo.forModel(m.id, true) : ''}
     <div class="meta">${m.nodes.map(n => `<a class="chip" data-kp="${n}">${esc(nodeLabel(n))}</a>`).join('')}</div>
     <div class="msteps">${MD.steps.map(s => m.steps[s] ? `<div class="mstep" id="ms-${s}"><div class="mk">${s}</div><div class="mv">
       <div class="short">${esc(m.steps[s].short)}</div><div class="solbody">${linkEq(md(m.steps[s].body))}</div></div></div>` : '').join('')}</div>
@@ -539,6 +540,7 @@ function modelDetail(step) {
   const wide = MV.cur === '_matrix';
   el.innerHTML = `<div class="inner${wide ? ' wide' : ''}">${MV.cur === '_matrix' ? matrixHtml() : MV.cur === '_rel' ? relHtml() : modelCard(mById[MV.cur])}</div>`;
   math(el);
+  if (window.Demo) Demo.mountAll(el);
   el.scrollTop = 0;
   if (step) { const s = $('#ms-' + step, el); if (s) { s.scrollIntoView({ block: 'start' }); s.classList.add('flash'); } }
   $$('#modelList .row').forEach(r => r.classList.toggle('cur', r.dataset.mrow === MV.cur));
@@ -587,6 +589,7 @@ function deriveDetail() {
     <div class="meta"><span class="muted small">模型：</span>${d.models.map(m => `<a class="chip" data-model="${m}">${esc(mById[m].name)}</a>`).join('')}
       <span class="muted small">教材：</span>${d.nodes.map(x => `<a class="chip" data-kp="${x}">${esc(nodeLabel(x))}</a>`).join('')}</div>
     <h2>目标</h2><div class="formula">${esc(d.goal)}</div>
+    ${window.Demo ? Demo.forDerivation(d.id, DV.demoOpen ?? !DV.recite) : ''}
     ${d.note ? `<div class="notebox">${linkEq(esc(d.note))}</div>` : ''}
     <h2>步骤${DV.recite ? `　<span class="small">已展开 ${Math.min(DV.shown, n)} / ${n}</span>` : ''}</h2>
     <div class="dsteps">${d.steps.map((s, k) => `<div class="dstep${hide(k) ? ' hid' : ''}" data-ds="${k}">
@@ -598,6 +601,10 @@ function deriveDetail() {
       : '<p class="muted small">勾选左上角“默写”可以逐步遮挡，先自己推再对答案。</p>'}
   </div>`;
   math(el);
+  if (window.Demo) {
+    Demo.mountAll(el);
+    const box = $('details.demo-box', el); if (box) box.addEventListener('toggle', () => { DV.demoOpen = box.open; });
+  }
   $$('#deriveList .row').forEach(r => r.classList.toggle('cur', r.dataset.drow === d.id));
   const cur = $('#deriveList .row.cur'); if (cur) cur.scrollIntoView({ block: 'nearest' });
 }
@@ -725,7 +732,7 @@ function route() {
     const cur = $('#termList .row.cur'); if (cur) cur.scrollIntoView({ block: 'nearest' });
   } else if (VIEW === 'kp') { kpList(); if (arg && nodeById[arg]) KV.cur = arg; kpDetail(); }
   else if (VIEW === 'models') { const [mid, step] = arg.split('#'); if (mid) MV.cur = mid; modelList(); modelDetail(step); }
-  else if (VIEW === 'derive') { if (arg && dById[arg] && arg !== DV.cur) { DV.cur = arg; DV.shown = 0; } deriveList(); deriveDetail(); }
+  else if (VIEW === 'derive') { if (arg && dById[arg] && arg !== DV.cur) { DV.cur = arg; DV.shown = 0; DV.demoOpen = undefined; } deriveList(); deriveDetail(); }
   else if (VIEW === 'syllabus') syllabusPage();
   else if (VIEW === 'exams') { examList(); if (arg) EV.cur = arg; examDetail(); }
   else if (VIEW === 'read') {
