@@ -219,3 +219,11 @@ details.demo-box > summary { cursor: pointer; padding: 8px 12px; font-weight: 60
 .demo-ctl input[type=range] { width: 150px; }
 .demo-ctl output { min-width: 3.5em; font-variant-numeric: tabular-nums; color: var(--accent); }
 .demo-note { font-size: 13px; line-height: 1.7; color: var(--ink); margin-top: 4px; }
+
+/* guided reading notes on the derivation page */
+.guide { margin: 12px 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--accent-bg); border-radius: 0 8px 8px 0; line-height: 1.8; font-size: 14.5px; }
+.guide p { margin: 4px 0; }
+.guide .gl, .dwhy .gl { display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--accent); margin-right: 6px; letter-spacing: 1px; }
+.dwhy { margin-top: 6px; padding: 6px 10px; background: var(--hover); border-radius: 6px; font-size: 13.5px; line-height: 1.75; }
+.dwhy p { display: inline; margin: 0; } .dwhy p + p { display: block; margin-top: 4px; }
+.dstep.hid .dwhy { display: none; }

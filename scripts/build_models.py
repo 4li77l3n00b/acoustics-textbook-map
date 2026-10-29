@@ -132,10 +132,40 @@ def main():
         for h, body in parts:
             text_checks(f'{did}/{h}', h + '\n' + body)
         text_checks(did, f.get('goal', '') + '\n' + f.get('note', ''))
+        # "### 导读" (before the steps) and "### 理解与联系" (after) are reading notes, not steps;
+        # inside a step, lines starting with "> " are its explanation (hidden in recite mode)
+        intro = '\n'.join(b for h, b in parts if h == '导读')
+        outro = '\n'.join(b for h, b in parts if h == '理解与联系')
+        steps = []
+        for h, body in parts:
+            if h in ('导读', '理解与联系'):
+                continue
+            lines = body.splitlines()
+            why = '\n'.join(ln[2:] for ln in lines if ln.startswith('> ')).strip()
+            main = '\n'.join(ln for ln in lines if not ln.startswith('> ')).strip()
+            steps.append({'title': h, 'body': main, 'why': why})
         derivations.append({'id': did, 'name': f.get('name', did), 'nodes': nodes(did, f.get('nodes', '')), 'asked': f.get('asked', '').split(),
                             'models': f.get('models', '').split(), 'goal': f.get('goal', ''), 'note': f.get('note', ''),
-                            'steps': [{'title': h, 'body': body} for h, body in parts]})
+                            'intro': intro, 'outro': outro, 'steps': steps})
 
+    # guided-reading notes (guide*.md): "## d-id", then "### 导读", "### 1" … (why of step 1 …), "### 理解与联系"
+    did_of = {d['id']: d for d in derivations}
+    for gp in sorted(SRC.glob('guide*.md')):
+        for gid, f, parts in sections(gp.read_text(encoding='utf-8')):
+            d = did_of.get(gid)
+            if not d:
+                errors.append(f'guide: unknown derivation {gid}')
+                continue
+            for h, body in parts:
+                text_checks(f'guide {gid}/{h}', body)
+                if h == '导读':
+                    d['intro'] = body
+                elif h == '理解与联系':
+                    d['outro'] = body
+                elif h.isdigit() and 1 <= int(h) <= len(d['steps']):
+                    d['steps'][int(h) - 1]['why'] = '\n'.join(ln[2:] if ln.startswith('> ') else ln for ln in body.splitlines()).strip()
+                else:
+                    errors.append(f'guide {gid}: unknown part {h} ({len(d["steps"])} steps)')
     # list derivations in book order (by their first section)
     order = {n['id']: i for i, n in enumerate(json.loads((TB / 'toc.json').read_text(encoding='utf-8'))['nodes'])}
     derivations.sort(key=lambda d: order.get(d['nodes'][0], 10**6) if d['nodes'] else 10**6)
@@ -147,7 +177,7 @@ def main():
     (ROOT / 'tmp/eqrefs.txt').write_text(''.join(f'({k}) {", ".join(sorted(set(v)))}\n    {eqs[k][2]}\n' for k, v in sorted(cited.items(), key=lambda kv: [int(x) if x.isdigit() else x for x in re.split(r'[-a-z]', kv[0]) if x])), encoding='utf-8')
     cells = sum(len(m['steps']) for m in models)
     print(f'{len(models)} models ({cells} cells), {len(relations)} relations, {len(derivations)} derivations '
-          f'({sum(len(d["steps"]) for d in derivations)} steps), {len(cited)} equations cited, formulas {len(snippets)}, errors {len(errors)}')
+          f'({sum(len(d["steps"]) for d in derivations)} steps, {sum(bool(d["intro"]) for d in derivations)} with guided notes), {len(cited)} equations cited, formulas {len(snippets)}, errors {len(errors)}')
     for e in errors:
         print('  ', e)
 

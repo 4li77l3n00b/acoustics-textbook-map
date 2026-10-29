@@ -555,25 +555,26 @@ $('#modelDetail').addEventListener('click', e => { const s = e.target.closest('[
 const DV = { filter: store.get('dFilter', ''), recite: store.get('dRecite', false), cur: null, order: [], shown: 0 };
 const DMASTER = store.get('dmastery', {});   // derivation id -> { ok, miss, last }
 const dLast = d => (DMASTER[d.id] || {}).last;
+const DREAD = store.get('dread', {});   // derivation id -> true once read through in guided mode
 function deriveList() {
   const box = $('#deriveList');
   if (!box.dataset.init) {
     box.dataset.init = 1;
-    box.innerHTML = `<div class="ctl"><select id="dfilter"><option value="">全部推导</option><option value="asked">考过的</option><option value="miss">没记住的</option><option value="new">还没练过的</option></select>
+    box.innerHTML = `<div class="ctl"><select id="dfilter"><option value="">全部推导</option><option value="asked">考过的</option><option value="miss">没记住的</option><option value="new">还没练过的</option><option value="unread">还没读过的</option></select>
       <label class="small" title="遮住每一步，先回忆再展开（空格），全部展开后标记记住 / 没记住（1 / 2）"><input type="checkbox" id="drecite">默写</label></div><div class="rows"></div>`;
     $('#dfilter').value = DV.filter; $('#drecite').checked = DV.recite;
     $('#dfilter').addEventListener('input', e => { DV.filter = e.target.value; store.put('dFilter', DV.filter); deriveList(); });
     $('#drecite').addEventListener('change', e => { e.target.blur(); DV.recite = e.target.checked; store.put('dRecite', DV.recite); DV.shown = 0; deriveDetail(); });
     box.addEventListener('click', e => { const r = e.target.closest('[data-drow]'); if (r) go('derive', r.dataset.drow); });
   }
-  const ds = DERIVS.filter(d => (DV.filter !== 'asked' || d.asked.length) && (DV.filter !== 'miss' || dLast(d) === 'miss') && (DV.filter !== 'new' || !dLast(d)));
+  const ds = DERIVS.filter(d => (DV.filter !== 'asked' || d.asked.length) && (DV.filter !== 'miss' || dLast(d) === 'miss') && (DV.filter !== 'new' || !dLast(d)) && (DV.filter !== 'unread' || !DREAD[d.id]));
   DV.order = ds.map(d => d.id);
-  let h = `<div class="muted small" style="padding:6px 12px">${ds.length} 条推导 · 已记住 ${DERIVS.filter(d => dLast(d) === 'ok').length} / ${DERIVS.length}</div>`, ch = null;
+  let h = `<div class="muted small" style="padding:6px 12px">${ds.length} 条推导 · 已读 ${DERIVS.filter(d => DREAD[d.id]).length} · 已记住 ${DERIVS.filter(d => dLast(d) === 'ok').length} / ${DERIVS.length}</div>`, ch = null;
   ds.forEach(d => {
     const c = d.nodes[0].split('/').slice(0, 2).join('/');
     if (c !== ch) { ch = c; h += `<div class="grp">${esc(nodeLabel(c))}</div>`; }
     h += `<div class="row${DV.cur === d.id ? ' cur' : ''}" data-drow="${d.id}"><span class="dot ${dLast(d) || ''}"></span><div class="nm"><div>${esc(d.name)}</div>
-      <div class="sub">${d.steps.length} 步 · ${esc(d.nodes.map(n => nodeById[n].num).join(' '))}</div></div>${d.asked.length ? `<span class="cnt">考 ${d.asked.length} 次</span>` : ''}</div>`;
+      <div class="sub">${DREAD[d.id] ? '✓ 已读 · ' : ''}${d.steps.length} 步 · ${esc(d.nodes.map(n => nodeById[n].num).join(' '))}</div></div>${d.asked.length ? `<span class="cnt">考 ${d.asked.length} 次</span>` : ''}</div>`;
   });
   $('.rows', box).innerHTML = h;
 }
@@ -590,15 +591,18 @@ function deriveDetail() {
       <span class="muted small">教材：</span>${d.nodes.map(x => `<a class="chip" data-kp="${x}">${esc(nodeLabel(x))}</a>`).join('')}</div>
     <h2>目标</h2><div class="formula">${esc(d.goal)}</div>
     ${window.Demo ? Demo.forDerivation(d.id, DV.demoOpen ?? !DV.recite) : ''}
+    ${d.intro ? `<div class="guide"><div class="gl">导读</div>${linkEq(md(d.intro))}</div>` : ''}
     ${d.note ? `<div class="notebox">${linkEq(esc(d.note))}</div>` : ''}
     <h2>步骤${DV.recite ? `　<span class="small">已展开 ${Math.min(DV.shown, n)} / ${n}</span>` : ''}</h2>
     <div class="dsteps">${d.steps.map((s, k) => `<div class="dstep${hide(k) ? ' hid' : ''}" data-ds="${k}">
       <div class="dh"><span class="dn">${k + 1}</span><span class="dt">${esc(s.title.replace(/^\d+\.\s*/, ''))}</span><span class="dph">先回忆这一步，再点开（空格）</span></div>
-      <div class="db solbody">${linkEq(md(s.body))}</div></div>`).join('')}</div>
+      <div class="db solbody">${linkEq(md(s.body))}</div>${s.why && !DV.recite ? `<div class="dwhy"><span class="gl">讲解</span>${linkEq(md(s.why))}</div>` : ''}</div>`).join('')}</div>
+    ${d.outro && (!DV.recite || DV.shown >= n) ? `<h2>理解与联系</h2><div class="guide outro">${linkEq(md(d.outro))}</div>` : ''}
     ${DV.recite ? `<div class="meta" style="margin-top:14px">${DV.shown < n ? '<button id="dnext">显示下一步（空格）</button><button id="dall">全部显示</button>'
       : `<span class="muted small">这一条：</span><button id="dok">记住了（1）</button><button id="dmiss">没记住（2）</button>`}
       <span class="muted small">${DMASTER[d.id] ? `记住 ${DMASTER[d.id].ok || 0} 次 · 没记住 ${DMASTER[d.id].miss || 0} 次` : ''}</span></div>`
-      : '<p class="muted small">勾选左上角“默写”可以逐步遮挡，先自己推再对答案。</p>'}
+      : `<div class="meta" style="margin-top:16px"><button id="dread">${DREAD[d.id] ? '已读 ✓，下一条 →' : '读完了，下一条 →'}</button>
+        <span class="muted small">按教材顺序一条条读下去；勾选左上角“默写”则遮住步骤和讲解，先自己推再对答案。</span></div>`}
   </div>`;
   math(el);
   if (window.Demo) {
@@ -634,6 +638,12 @@ $('#deriveDetail').addEventListener('click', e => {
   const t = e.target;
   if (t.id === 'dnext') deriveReveal(false);
   else if (t.id === 'dall') deriveReveal(true);
+  else if (t.id === 'dread') {
+    DREAD[DV.cur] = true; store.put('dread', DREAD);
+    const i = DV.order.indexOf(DV.cur), next = DV.order[i + 1];
+    deriveList();
+    if (next) go('derive', next); else deriveDetail();
+  }
   else if (t.id === 'dok') deriveJudge(true);
   else if (t.id === 'dmiss') deriveJudge(false);
   else if (t.closest('[data-dnav]')) deriveStep(+t.closest('[data-dnav]').dataset.dnav);
