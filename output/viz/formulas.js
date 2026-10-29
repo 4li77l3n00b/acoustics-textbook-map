@@ -150,17 +150,49 @@ const FX_SRC = String.raw`
 瑞利波 | c_s\approx(0.87\sim0.96)c_T,\quad \sigma=0.25\ 时\ c_s=0.919c_T | 11.2.3；书中下限印作 0.814
 液固界面 | \frac{\sin\theta_i}{c_1}=\frac{\sin\theta_{tL}}{c_{2L}}=\frac{\sin\theta_{tT}}{c_{2T}} | (11-2-25)，两个临界角
 
-# 特殊函数
-J₀ 的零点 | \mu=2.405,\quad 5.520,\quad 8.654,\quad 11.79 | 圆膜 $J_0(ka)=0$
-J₁ 的零点 | 3.832,\quad 7.016,\quad 10.17 | 刚性圆管轴对称 $J_0'=-J_1=0$；活塞指向性零点
-J'ₘ 的零点 | m=1:\ 1.841,\ 5.331;\quad m=2:\ 3.054;\quad m=0:\ 3.832 | 刚性圆管截止
-常用值 | J_0(0)=1,\quad J_1(x)\approx\frac x2\ (x\ll1),\quad J_1(2)\approx0.577 | 
-导数关系 | J_0'(x)=-J_1(x),\quad J_m'=\frac12(J_{m-1}-J_{m+1}),\quad \int xJ_0\,dx=xJ_1
-大宗量 | J_m(x)\approx\sqrt{\frac2{\pi x}}\cos\Big(x-\frac{m\pi}2-\frac\pi4\Big) | $x\gg1$
-球贝塞尔 | j_0(x)=\frac{\sin x}x,\quad n_0(x)=-\frac{\cos x}x,\quad h_0^{(2)}(x)=\frac{j}{x}e^{-jx} | (6-7-29)、(6-7-33)
-勒让德 | P_0=1,\quad P_1=\cos\theta,\quad P_2=\frac12(3\cos^2\theta-1) | 球函数展开
-欧拉公式 | e^{j\theta}=\cos\theta+j\sin\theta | 时间因子 $e^{j\omega t}$（教材）
-等比求和 | \sum_{i=0}^{n-1}e^{-ji\psi}=e^{-j\frac{(n-1)\psi}2}\frac{\sin\frac{n\psi}2}{\sin\frac\psi2} | 声柱阵因子
+# 贝塞尔函数
+柱贝塞尔方程 | \frac{d^2R}{dx^2}+\frac1x\frac{dR}{dx}+\Big(1-\frac{m^2}{x^2}\Big)R=0,\quad R=AJ_m(x)+BN_m(x) | 圆膜 (2-3-10)、圆管 (5-7-38)；中心有限要求 $B=0$
+级数定义 | J_m(x)=\sum_{k=0}^\infty\frac{(-1)^k}{k!\,(k+m)!}\Big(\frac x2\Big)^{2k+m} | 
+小宗量 | J_0(x)\approx1-\frac{x^2}4,\quad J_1(x)\approx\frac x2-\frac{x^3}{16},\quad J_m(x)\approx\frac{1}{m!}\Big(\frac x2\Big)^m | $x\ll1$
+诺依曼函数 | N_0(x)\approx\frac2\pi\ln\frac x2\to-\infty\ (x\to0),\quad N_m\sim-\frac{(m-1)!}{\pi}\Big(\frac2x\Big)^m | 在中心发散，所以实心圆膜、圆管舍去
+大宗量 | J_m(x)\approx\sqrt{\frac2{\pi x}}\cos\Big(x-\frac{m\pi}2-\frac\pi4\Big),\quad N_m(x)\approx\sqrt{\frac2{\pi x}}\sin\Big(x-\frac{m\pi}2-\frac\pi4\Big) | $x\gg1$：振幅按 $1/\sqrt x$ 衰减的余弦
+递推关系 | J_{m-1}+J_{m+1}=\frac{2m}xJ_m,\quad J_{m-1}-J_{m+1}=2J_m' | 
+导数 | J_0'=-J_1,\quad \frac{d}{dx}\big[x^mJ_m\big]=x^mJ_{m-1},\quad \frac{d}{dx}\big[x^{-m}J_m\big]=-x^{-m}J_{m+1} | 
+积分 | \int_0^xtJ_0(t)\,dt=xJ_1(x),\quad \int_0^a J_0^2\Big(\frac{\mu r}{a}\Big)r\,dr=\frac{a^2}2J_1^2(\mu)\ \ (J_0(\mu)=0) | 后者用于圆膜等效质量 (2-3-26)
+积分表示 | J_0(x)=\frac1{2\pi}\int_0^{2\pi}e^{jx\cos\varphi}d\varphi,\quad e^{jx\cos\varphi}=\sum_{m=-\infty}^{\infty}j^mJ_m(x)e^{jm\varphi} | 圆形振膜受力、活塞指向性的积分由此得到
+J₀ 的零点 | 2.4048,\quad 5.5201,\quad 8.6537,\quad 11.7915 | 圆膜 $J_0(ka)=0$，频率比 1 : 2.295 : 3.598
+J₁ 的零点（= J₀′ 的零点） | 3.8317,\quad 7.0156,\quad 10.1735 | 圆膜 (1,n) 方式；轴对称圆管 $J_0'=0$；活塞指向性零点
+J₂ 的零点 | 5.1356,\quad 8.4172 | 圆膜 (2,n) 方式
+J′ₘ 的零点 | m=1:\ 1.8412,\ 5.3314,\ 8.5363;\quad m=2:\ 3.0542,\ 6.7061 | 刚性圆管截止频率 $f_{mn}=\mu_{mn}\frac{c_0}{2\pi a}$
+常用函数值 | J_0(2)=0.2239,\quad J_1(2)=0.5767,\quad J_1(2.405)=0.5191,\quad J_1(5.520)=-0.3403 | 2024 年 $ka=2$：$J_1(2)$ → −4.8 dB；圆膜 $M_{e1}=0.27m$
+J₀ 的极值 | J_0\ \text{最小值}\ -0.4028\ \text{在}\ x=3.832 | $J_0'=-J_1=0$ 处
+指向性函数 2J₁(x)/x | x=1.616:\ 0.707\ (-3\ \mathrm{dB}),\quad x=3.832:\ 0,\quad \text{第一旁瓣}\ x=5.136:\ -17.6\ \mathrm{dB} | 活塞 / 圆形振膜，$x=ka\sin\theta$；零点 $\sin\theta=0.61\lambda/a$
+修正贝塞尔函数 | I_0(x)=J_0(jx)=\sum_{k}\frac{(x/2)^{2k}}{(k!)^2},\quad I_0'=I_1,\quad I_0(x)\approx\frac{e^x}{\sqrt{2\pi x}} | 单调增长；圆板解 $AJ_0+BI_0$ (2-4-14)
+钳定圆板的根 | J_0(\mu)I_1(\mu)+J_1(\mu)I_0(\mu)=0:\quad \mu=3.196,\ 6.306,\ 9.439 | (2-4-17)
+
+# 球函数与勒让德函数
+球贝塞尔函数 | j_0(x)=\frac{\sin x}x,\quad j_1(x)=\frac{\sin x}{x^2}-\frac{\cos x}x | (6-7-29)
+球诺依曼函数 | n_0(x)=-\frac{\cos x}x,\quad n_1(x)=-\frac{\cos x}{x^2}-\frac{\sin x}x | 
+球汉克尔函数（发散波） | h_l^{(2)}=j_l-jn_l:\quad h_0^{(2)}=\frac jxe^{-jx},\quad h_1^{(2)}=-\frac{e^{-jx}}x\Big(1-\frac jx\Big) | 配 $e^{j\omega t}$ 时是向外的球面波 (6-7-33)
+球函数的极限 | j_l(x)\approx\frac{x^l}{(2l+1)!!},\quad n_l(x)\approx-\frac{(2l-1)!!}{x^{l+1}}\ (x\ll1);\quad h_l^{(2)}\approx j^{l+1}\frac{e^{-jx}}{x}\ (x\gg1) | 
+球函数递推 | f_{l-1}+f_{l+1}=\frac{2l+1}xf_l,\quad f_l'=f_{l-1}-\frac{l+1}xf_l | $f$ 代表 $j_l$、$n_l$、$h_l$
+勒让德多项式 | P_0=1,\quad P_1=\cos\theta,\quad P_2=\frac{3\cos^2\theta-1}2,\quad P_3=\frac{5\cos^3\theta-3\cos\theta}2 | 
+勒让德递推与正交 | (l+1)P_{l+1}=(2l+1)xP_l-lP_{l-1},\quad \int_{-1}^1P_lP_{l'}dx=\frac{2\delta_{ll'}}{2l+1} | 展开系数 $A_l=(l+\frac12)\int_{-1}^1f\,P_l\,dx$ (7-2-4)
+平面波的球函数展开 | e^{-jkr\cos\theta}=\sum_{l=0}^\infty(-j)^l(2l+1)\,j_l(kr)P_l(\cos\theta) | 刚性球散射的第一步 (7-2-3)
+
+# 数学工具
+欧拉公式 | e^{j\theta}=\cos\theta+j\sin\theta,\quad \cos\theta=\frac{e^{j\theta}+e^{-j\theta}}2 | 教材时间因子 $e^{j\omega t}$；题目若用 $e^{-i\omega t}$，阻抗虚部变号
+复数 | |a+jb|=\sqrt{a^2+b^2},\quad \arg(a+jb)=\arctan\frac ba,\quad \frac1{a+jb}=\frac{a-jb}{a^2+b^2} | 
+时间平均 | \overline{\mathrm{Re}(Ae^{j\omega t})\,\mathrm{Re}(Be^{j\omega t})}=\frac12\mathrm{Re}(AB^*),\quad \overline{\cos^2\omega t}=\frac12 | 声强、平均功率都用它
+驻波的合成 | e^{-jkx}+e^{jkx}=2\cos kx,\quad e^{-jkx}-e^{jkx}=-2j\sin kx | 刚性壁反射 → $\cos$，软边界 → $\sin$
+和差化积 | \sin a\pm\sin b=2\sin\frac{a\pm b}2\cos\frac{a\mp b}2,\quad \cos a+\cos b=2\cos\frac{a+b}2\cos\frac{a-b}2 | 两源叠加、拍
+等比求和（阵因子） | \sum_{i=0}^{n-1}e^{-ji\psi}=e^{-j\frac{(n-1)\psi}2}\frac{\sin\frac{n\psi}2}{\sin\frac\psi2} | 声柱、传声器阵列
+sinc 函数 | \frac{\sin x}x:\quad 0.707\ \text{在}\ x=1.392,\quad \text{零点}\ x=n\pi | 连续线阵、多声道干涉的指向性
+傅里叶正弦级数 | f(x)=\sum_nb_n\sin\frac{n\pi x}l,\quad b_n=\frac2l\int_0^lf(x)\sin\frac{n\pi x}l\,dx | 弦的初始条件 (2-1-36)
+三角函数正交性 | \int_0^l\sin\frac{m\pi x}l\sin\frac{n\pi x}l\,dx=\int_0^l\cos\frac{m\pi x}l\cos\frac{n\pi x}l\,dx=\frac l2\delta_{mn} | $m=n=0$ 的余弦积分为 $l$（波导系数 (5-7-29)）
+双曲函数 | \cosh x=\frac{e^x+e^{-x}}2,\quad \cosh^2x-\sinh^2x=1,\quad \cos(jx)=\cosh x | 棒的横振动解 (2-2-56)
+二阶常系数方程 | \ddot\xi+2\delta\dot\xi+\omega_0^2\xi=0:\quad \gamma=-\delta\pm\sqrt{\delta^2-\omega_0^2} | 根为复数时振动，实数时不振动
+小量展开 | (1+x)^n\approx1+nx,\quad \ln(1+x)\approx x,\quad \tan x\approx x+\frac{x^3}3 | 线性化、(2-2-27)
 
 # 分贝运算
 声压级与声压 | p_e=2\times10^{-5}\times10^{SPL/20},\quad I=10^{-12}\times10^{SIL/10} | 
@@ -231,6 +263,7 @@ const FX = (() => {
   }
   function place() {  // keep the window on screen (after a resize of the app window too)
     const W = innerWidth, H = innerHeight;
+    if (W < 200 || H < 150) return;  // minimised / hidden window: keep the last good geometry
     ST.w = Math.min(Math.max(ST.w || 560, 320), W - 16);
     ST.h = Math.min(Math.max(ST.h || Math.round(H * 0.7), 220), H - 16);
     if (ST.x == null) { ST.x = W - ST.w - 24; ST.y = 100; }
@@ -263,7 +296,7 @@ const FX = (() => {
   });
   // resized from the corner (CSS resize): remember the size
   new ResizeObserver(() => {
-    if (box.hidden) return;
+    if (box.hidden || innerWidth < 200 || innerHeight < 150) return;
     ST.w = box.offsetWidth; ST.h = box.offsetHeight;
     clearTimeout(box.saveT); box.saveT = setTimeout(save, 300);
   }).observe(box);
@@ -275,7 +308,11 @@ const FX = (() => {
   $('#fxclose', box).addEventListener('click', () => toggle(false));
   box.addEventListener('click', e => {
     const c = e.target.closest('[data-fxg]');
-    if (c) { const s = body.querySelector(`[data-fxsec="${c.dataset.fxg}"]`); if (s) body.scrollTop = s.offsetTop - body.offsetTop; return; }
+    if (c) {  // the group headers are sticky, so measure from the first formula under the header instead
+      const s = body.querySelector(`[data-fxsec="${c.dataset.fxg}"]`), it = s && s.nextElementSibling;
+      if (it) body.scrollTop = Math.max(0, it.offsetTop - body.offsetTop - s.offsetHeight);
+      return;
+    }
     const it = e.target.closest('.fx-it');
     if (it && ST.hide) it.classList.toggle('show');
   });
