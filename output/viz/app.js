@@ -465,6 +465,17 @@ function linkEq(html) {
   return html.split(/(\$\$[\s\S]*?\$\$|\$[^$]*\$)/).map((s, i) => i % 2 ? s : s.replace(/[（(](\d{1,2}-\d{1,2}-\d{1,3}[a-z]?)[)）]/g,
     (m, k) => EQS[k] ? `<a class="eq" data-read="${EQS[k][1]}" data-blk="${EQS[k][0]}" title="在书中查看式 (${k})">(${k})</a>` : m)).join('');
 }
+// where each derivation step is in the book: the first equation it cites; a step citing none continues where the
+// previous one was (the first step falls back to the derivation's first section)
+function stepBook(d) {
+  const nd = nodeById[d.nodes[0]];
+  let at = nd ? { blk: nd.anchor, p: nd.pdf_page, own: false } : null;
+  return d.steps.map(s => {
+    const k = [...s.body.replace(/\$[^$]*\$/g, '').matchAll(/[（(](\d{1,2}-\d{1,2}-\d{1,3}[a-z]?)[)）]/g)].map(m => m[1]).find(k => EQS[k]);
+    at = k ? { blk: EQS[k][0], p: EQS[k][1], own: true, eq: k } : at && { ...at, own: false };
+    return at;
+  });
+}
 const MODELS = MD.models, mById = Object.fromEntries(MODELS.map(m => [m.id, m]));
 const DERIVS = MD.derivations, dById = Object.fromEntries(DERIVS.map(d => [d.id, d]));
 const covers = (m, id) => m.nodes.some(n => under(n, id) || under(id, n));
@@ -583,6 +594,8 @@ function deriveDetail() {
   if (!DV.cur || !dById[DV.cur]) DV.cur = DV.order[0] || DERIVS[0].id;
   const d = dById[DV.cur], n = d.steps.length, i = DV.order.indexOf(d.id);
   const hide = k => DV.recite && k >= DV.shown;
+  const book = stepBook(d);
+  const bookLink = b => b ? `<a class="dbook" data-read="${b.p}" data-blk="${b.blk}" title="${b.own ? `在书中查看这一步的推导（式 (${b.eq}) 处）` : '这一步没有引用式号：打开上一步所在位置，往后读即是'}">书中第 ${PAGE[b.p].printed} 页${b.own ? '' : ' 附近'} →</a>` : '';
   el.innerHTML = `<div class="inner${DV.recite ? ' drecite' : ''}">
     <div class="meta"><button data-dnav="-1" ${i <= 0 ? 'disabled' : ''}>↑ 上一条</button><button data-dnav="1" ${i < 0 || i >= DV.order.length - 1 ? 'disabled' : ''}>下一条 ↓</button></div>
     <h1 class="ttl">${esc(d.name)}</h1>
@@ -597,7 +610,7 @@ function deriveDetail() {
     ${d.note ? `<div class="notebox">${linkEq(esc(d.note))}</div>` : ''}
     <h2>步骤${DV.recite ? `　<span class="small">已展开 ${Math.min(DV.shown, n)} / ${n}</span>` : ''}</h2>
     <div class="dsteps">${d.steps.map((s, k) => `<div class="dstep${hide(k) ? ' hid' : ''}" data-ds="${k}">
-      <div class="dh"><span class="dn">${k + 1}</span><span class="dt">${esc(s.title.replace(/^\d+\.\s*/, ''))}</span><span class="dph">先回忆这一步，再点开（空格）</span></div>
+      <div class="dh"><span class="dn">${k + 1}</span><span class="dt">${esc(s.title.replace(/^\d+\.\s*/, ''))}</span><span class="dph">先回忆这一步，再点开（空格）</span>${bookLink(book[k])}</div>
       <div class="db solbody">${linkEq(md(s.body))}</div>${s.why && !DV.recite ? `<div class="dwhy"><span class="gl">讲解</span>${linkEq(md(s.why))}</div>` : ''}</div>`).join('')}</div>
     ${d.outro && (!DV.recite || DV.shown >= n) ? `<h2>理解与联系</h2><div class="guide outro">${linkEq(md(d.outro))}</div>` : ''}
     ${DV.recite ? `<div class="meta" style="margin-top:14px">${DV.shown < n ? '<button id="dnext">显示下一步（空格）</button><button id="dall">全部显示</button>'

@@ -173,6 +173,8 @@ a.eq { white-space: nowrap; }
 .dstep.hid { border-style: dashed; cursor: pointer; background: transparent; }
 .dstep.hid .dt, .dstep.hid .db { display: none; }
 .dstep.hid .dph { display: inline; }
+.dstep .dbook { margin-left: auto; font-size: 12px; font-weight: 400; white-space: nowrap; }
+.dstep.hid .dbook { display: none; }
 .dstep.hid ~ .dstep.hid { cursor: default; opacity: .6; }
 @media (max-width: 1250px) { #topnote { display: none; } }
 @media (max-width: 1000px) { .brand { display: none; } #tabs a { padding: 6px 9px; font-size: 14px; } .list { width: 300px; } }
