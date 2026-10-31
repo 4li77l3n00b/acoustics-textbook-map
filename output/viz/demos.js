@@ -183,6 +183,14 @@ const Demo = (() => {
     const box = document.createElement('div'); box.className = 'demo-ctl';
     for (const q of spec.params || []) {
       if (q.when && !q.when(p)) continue;
+      if (q.stepper) {  // ◀ n ▶ buttons for a step-by-step demo; fmt(v) names the step
+        const st = document.createElement('div'); st.className = 'demo-stepper';
+        st.innerHTML = `<button data-d="-1" title="上一步">◀</button><output></output><button data-d="1" title="下一步">▶</button>`;
+        const out = st.querySelector('output'), show = () => { out.textContent = q.fmt ? q.fmt(p[q.k], p) : p[q.k]; st.querySelectorAll('button').forEach(b => { b.disabled = p[q.k] + +b.dataset.d < q.min || p[q.k] + +b.dataset.d > q.max; }); };
+        st.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; p[q.k] = Math.min(q.max, Math.max(q.min, p[q.k] + +b.dataset.d)); show(); onChange(false); });
+        show(); box.appendChild(st);
+        continue;
+      }
       const lab = document.createElement('label');
       if (q.options) {
         lab.innerHTML = `${q.label ? `<span>${esc(q.label)}</span>` : ''}<select>${q.options.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>`;

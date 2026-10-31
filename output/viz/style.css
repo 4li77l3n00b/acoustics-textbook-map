@@ -236,6 +236,9 @@ details.demo-box > summary { cursor: pointer; padding: 8px 12px; font-weight: 60
 .demo-ctl label { display: flex; align-items: center; gap: 6px; }
 .demo-ctl input[type=range] { width: 150px; }
 .demo-ctl output { min-width: 3.5em; font-variant-numeric: tabular-nums; color: var(--accent); }
+.demo-stepper { display: flex; align-items: center; gap: 6px; }
+.demo-stepper button { padding: 2px 12px; font-size: 13px; }
+.demo-stepper output { min-width: 10em; text-align: center; font-weight: 600; }
 .demo-note { font-size: 13px; line-height: 1.7; color: var(--ink); margin-top: 4px; }
 
 /* guided reading notes on the derivation page */

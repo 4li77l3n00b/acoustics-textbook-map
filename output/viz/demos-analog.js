@@ -377,8 +377,235 @@
     },
   };
 
+  /* ---------- 画声学类比线路图的过程：认结构 → 声流线 → 地 → 换元件 → 连线路 → 列方程 ---------- */
+  // structure parts in a unit box (u right, v down); circuit elements in another unit box, k = order of drawing
+  const AC_EX = {
+    two: {
+      parts: [
+        { id: 'src', type: 'src', u0: 0, u1: 0.12, v0: 0.3, v1: 0.7, label: '声源', col: 'red', ov: 'p' },
+        { id: 'c1', type: 'cav', u0: 0.28, u1: 0.52, v0: 0.2, v1: 0.8, label: '腔体 1', col: 'blue', ov: 'C₁' },
+        { id: 'c2', type: 'cav', u0: 0.68, u1: 0.95, v0: 0.2, v1: 0.8, label: '腔体 2', col: 'blue', ov: 'C₂' },
+        { id: 'n1', type: 'tube', u0: 0.12, u1: 0.28, v: 0.5, hw: 9, label: '细管 1', col: 'orange', ov: 'M₁ R₁' },
+        { id: 'n2', type: 'tube', u0: 0.52, u1: 0.68, v: 0.5, hw: 9, label: '细管 2', col: 'orange', ov: 'M₂ R₂' },
+      ],
+      flows: [[[0.03, 0.5], [0.4, 0.5]], [[0.4, 0.5], [0.4, 0.77]], [[0.4, 0.5], [0.815, 0.5]], [[0.815, 0.5], [0.815, 0.77]]],
+      grounds: [{ u: 0.4, v: 0.8, text: '刚性壁' }, { u: 0.815, v: 0.8, text: '刚性壁' }],
+      circuit: [
+        { k: 1, part: 'src', kind: 'V', a: [0.04, 0.85], b: [0.04, 0.15], label: 'p' },
+        { k: 2, part: 'n1', kind: 'LR', a: [0.04, 0.15], b: [0.5, 0.15], label: 'M₁ R₁' },
+        { k: 3, part: 'c1', kind: 'C', a: [0.5, 0.15], b: [0.5, 0.85], label: 'C₁' },
+        { k: 4, part: 'n2', kind: 'LR', a: [0.5, 0.15], b: [0.96, 0.15], label: 'M₂ R₂' },
+        { k: 5, part: 'c2', kind: 'C', a: [0.96, 0.15], b: [0.96, 0.85], label: 'C₂' },
+      ],
+      nodes: [[0.5, 0.15, 3]],
+      eq: '回路 1：$p=(j\\omega M_1+R_1)U_1+\\dfrac{U_1-U_2}{j\\omega C_1}$；回路 2：$\\dfrac{U_1-U_2}{j\\omega C_1}=(j\\omega M_2+R_2)U_2+\\dfrac{U_2}{j\\omega C_2}$。',
+    },
+    open: {
+      parts: [
+        { id: 'src', type: 'src', u0: 0, u1: 0.12, v0: 0.3, v1: 0.7, label: '声源', col: 'red', ov: 'p' },
+        { id: 'cav', type: 'cav', u0: 0.3, u1: 0.6, v0: 0.2, v1: 0.8, label: '腔体', col: 'blue', ov: 'C' },
+        { id: 'n1', type: 'tube', u0: 0.12, u1: 0.3, v: 0.5, hw: 9, label: '进口细管', col: 'orange', ov: 'M₁ R₁' },
+        { id: 'n2', type: 'tube', u0: 0.6, u1: 0.85, v: 0.5, hw: 9, label: '出口细管', col: 'orange', ov: 'M₂ R₂' },
+        { id: 'out', type: 'open', u: 0.85, v: 0.5, label: '管口通大气', col: 'green', ov: '大气 = 地' },
+      ],
+      flows: [[[0.03, 0.5], [0.45, 0.5]], [[0.45, 0.5], [0.45, 0.77]], [[0.45, 0.5], [0.97, 0.5]]],
+      grounds: [{ u: 0.45, v: 0.8, text: '刚性壁' }, { u: 0.97, v: 0.56, text: '大气' }],
+      circuit: [
+        { k: 1, part: 'src', kind: 'V', a: [0.04, 0.85], b: [0.04, 0.15], label: 'p' },
+        { k: 2, part: 'n1', kind: 'LR', a: [0.04, 0.15], b: [0.5, 0.15], label: 'M₁ R₁' },
+        { k: 3, part: 'cav', kind: 'C', a: [0.5, 0.15], b: [0.5, 0.85], label: 'C' },
+        { k: 4, part: 'n2', kind: 'LR', a: [0.5, 0.15], b: [0.96, 0.15], label: 'M₂ R₂' },
+        { k: 5, part: 'out', kind: 'wire', a: [0.96, 0.15], b: [0.96, 0.85], label: '管口接地' },
+      ],
+      nodes: [[0.5, 0.15, 3]],
+      eq: '回路 1：$p=(j\\omega M_1+R_1)U_1+\\dfrac{U_1-U_2}{j\\omega C}$；回路 2：$\\dfrac{U_1-U_2}{j\\omega C}=(j\\omega M_2+R_2)U_2$（管口辐射阻抗忽略，直接接地）。',
+    },
+    branch: {
+      parts: [
+        { id: 'src', type: 'src', u0: 0, u1: 0.12, v0: 0.18, v1: 0.52, label: '声源', col: 'red', ov: 'p' },
+        { id: 'cav', type: 'cav', u0: 0.36, u1: 0.64, v0: 0.64, v1: 0.94, label: '旁支腔体', col: 'blue', ov: 'Cb' },
+        { id: 't1', type: 'tube', u0: 0.12, u1: 0.5, v: 0.35, hw: 12, label: '主管', col: 'purple', ov: 'Mt' },
+        { id: 't2', type: 'tube', u0: 0.5, u1: 0.88, v: 0.35, hw: 12, label: '主管', col: 'purple', ov: 'Mt' },
+        { id: 'nb', type: 'vtube', u: 0.5, v0: 0.35, v1: 0.64, hw: 8, label: '旁支细管', col: 'orange', ov: 'Mb Rb' },
+        { id: 'out', type: 'open', u: 0.88, v: 0.35, label: '开口', col: 'green', ov: 'RL' },
+      ],
+      flows: [[[0.03, 0.35], [0.5, 0.35]], [[0.5, 0.35], [0.98, 0.35]], [[0.5, 0.35], [0.5, 0.88]]],
+      grounds: [{ u: 0.5, v: 0.93, text: '刚性壁' }, { u: 0.98, v: 0.41, text: '大气' }],
+      circuit: [
+        { k: 1, part: 'src', kind: 'V', a: [0.04, 0.85], b: [0.04, 0.15], label: 'p' },
+        { k: 2, part: 't1', kind: 'L', a: [0.04, 0.15], b: [0.5, 0.15], label: 'Mt' },
+        { k: 3, part: 'nb', kind: 'L', a: [0.5, 0.15], b: [0.5, 0.38], label: 'Mb' },
+        { k: 3, part: 'nb', kind: 'R', a: [0.5, 0.38], b: [0.5, 0.6], label: 'Rb' },
+        { k: 4, part: 'cav', kind: 'C', a: [0.5, 0.6], b: [0.5, 0.85], label: 'Cb' },
+        { k: 5, part: 't2', kind: 'L', a: [0.5, 0.15], b: [0.96, 0.15], label: 'Mt' },
+        { k: 6, part: 'out', kind: 'R', a: [0.96, 0.15], b: [0.96, 0.85], label: 'RL' },
+      ],
+      nodes: [[0.5, 0.15, 3]],
+      eq: '设节点声压 $p_1$：$p=j\\omega M_tU+p_1$，$p_1=\\left(j\\omega M_b+R_b+\\dfrac1{j\\omega C_b}\\right)U_b=(j\\omega M_t+R_L)(U-U_b)$。$f_0=\\frac1{2\\pi\\sqrt{M_bC_b}}$ 时旁支几乎短路，开口没有声音出去。',
+    },
+  };
+  const AC_STEPS = ['认清结构', '画声流线', '找出“地”', '结构换成元件', '按流线连成线路', '检查并列方程'];
+  const AC_REV = ['读线路图', '沿电流画声流线', '串臂 → 细管', '对地电容 → 腔体', '接地处 → 刚性壁或开口', '拼成结构并检查'];
+  // reverse direction: which kinds of parts exist after each step, and which are being added
+  const REV_SHOW = [[], ['src'], ['src', 'tube', 'vtube'], ['src', 'tube', 'vtube', 'cav'], ['src', 'tube', 'vtube', 'cav', 'open'], ['src', 'tube', 'vtube', 'cav', 'open']];
+  const REV_NEW = [[], ['src'], ['tube', 'vtube'], ['cav'], ['open'], []];
+  const AC_RULES = [
+    '认结构：声源、细管、腔体、通大气的开口',
+    '声流线：从声源出发，沿体积速度流过各元件',
+    '地：声流线终止于刚性壁或大气（只有压强差有意义）',
+    '细管 → 声质量 M、声阻 R 串联；腔体 → 声容 C 接地；开口 → 辐射阻抗（常近似为接地）',
+    '流线不分支、依次穿过 → 串联；流线分叉 → 并联',
+    '每个腔一条对地声容；节点处体积速度之和为零',
+  ];
+  reg.acdraw = {
+    title: '一步一步画声学系统的类比线路图', h: 340,
+    params: [
+      { k: 'dir', label: '', options: [['fwd', '由结构画线路'], ['rev', '由线路画结构']], v: 'fwd' },
+      { k: 'ex', label: '', options: [['two', '两个共鸣器串接（图 3-4-7）'], ['open', '腔体经出口细管通大气'], ['branch', '主管旁接共鸣器']], v: 'two' },
+      { k: 'st', stepper: true, min: 1, max: 6, v: 1, fmt: (v, p) => `第 ${v} / 6 步：${(p.dir === 'rev' ? AC_REV : AC_STEPS)[v - 1]}` },
+    ],
+    setup(p, S) {
+      if (S.ex !== p.ex || S.dir !== p.dir) { S.ex = p.ex; S.dir = p.dir; p.st = 1; }
+      if (S.st !== p.st) { S.st = p.st; S.t0 = null; }
+    },
+    draw(g, p, S, t) {
+      const { th: c, W, H } = g, ex = AC_EX[p.ex], st = p.st, rev = p.dir === 'rev';
+      if (S.t0 == null) S.t0 = t;
+      const dt = t - S.t0, col = k => c[k];
+      const SB = { x: 14, y: 34, w: W * 0.5 - 28, h: H - 84 }, CB = { x: W * 0.5 + 26, y: 44, w: W * 0.5 - 50, h: H - 104 };
+      const U = u => SB.x + u * SB.w, V = v => SB.y + v * SB.h, CX = u => CB.x + u * CB.w, CY = v => CB.y + v * CB.h;
+      g.text('声学结构', SB.x + SB.w / 2, 14, { color: c.muted, size: 11.5, align: 'center' });
+      g.text(st >= 5 || rev ? '类比线路（阻抗型）' : '画图规则', CB.x + CB.w / 2, 14, { color: c.muted, size: 11.5, align: 'center' });
+      // which part is highlighted now: step 1 cycles through the parts, step 5 follows the element being drawn
+      const nPart = ex.parts.length, maxK = Math.max(...ex.circuit.map(e => e.k));
+      const shownK = rev || st >= 6 ? maxK : st === 5 ? Math.min(maxK, Math.floor(dt / 1.1) + 1) : 0;
+      const typeOf = id => (ex.parts.find(q => q.id === id) || {}).type;
+      // forward: step 1 cycles through the parts, step 5 follows the element being drawn;
+      // reverse: step 1 cycles through the circuit elements, steps 2–5 light up the parts being added
+      const revK = rev && st === 1 ? Math.floor(dt / 1.2) % maxK + 1 : 0;
+      const isHi = id => rev ? (st === 1 ? ex.circuit.some(e => e.k === revK && e.part === id) : REV_NEW[st - 1].includes(typeOf(id)))
+        : id === (st === 1 ? ex.parts[Math.floor(dt / 1.2) % nPart].id : st === 5 ? (ex.circuit.find(e => e.k === shownK) || {}).part : null);
+      const shown = pt => !rev || REV_SHOW[st - 1].includes(pt.type);
+      // ---------- structure ----------
+      const drawPart = pt => {
+        const hi = isHi(pt.id) || (!rev && st === 4), pc = col(pt.col), w = hi ? 3 : 2, ink = hi ? pc : c.ink;
+        if (pt.type === 'src') {
+          g.field({ x: U(pt.u0), y: V(pt.v0), w: U(pt.u1) - U(pt.u0), h: V(pt.v1) - V(pt.v0) }, 16, 4, i => 0.45 * Math.cos(TAU * 0.6 * t - (i - 16) * 0.35));
+          if (hi) g.rect(U(pt.u0), V(pt.v0), U(pt.u1) - U(pt.u0), V(pt.v1) - V(pt.v0), null, pc, 2.5);
+        } else if (pt.type === 'cav') {
+          g.rect(U(pt.u0), V(pt.v0), U(pt.u1) - U(pt.u0), V(pt.v1) - V(pt.v0), hi ? pc + '22' : c.bg, ink, w + 0.4);
+        } else if (pt.type === 'tube') {
+          const y = V(pt.v), x0 = U(pt.u0) - 2, x1 = U(pt.u1) + 2;
+          g.rect(x0, y - pt.hw + 1, x1 - x0, 2 * pt.hw - 2, hi || st >= 4 || rev ? pc + '30' : c.bg);
+          g.line([[x0, y - pt.hw], [x1, y - pt.hw]], ink, w); g.line([[x0, y + pt.hw], [x1, y + pt.hw]], ink, w);
+        } else if (pt.type === 'vtube') {
+          const x = U(pt.u), y0 = V(pt.v0) + 12, y1 = V(pt.v1) + 2;
+          g.rect(x - pt.hw + 1, y0 - 2, 2 * pt.hw - 2, y1 - y0 + 2, hi || st >= 4 || rev ? pc + '30' : c.bg);
+          g.line([[x - pt.hw, y0], [x - pt.hw, y1]], ink, w); g.line([[x + pt.hw, y0], [x + pt.hw, y1]], ink, w);
+        } else if (pt.type === 'open') {
+          for (let k = 1; k <= 3; k++) {
+            const rr = 7 * k + 5 * ((t * 0.6) % 1);
+            g.line(Array.from({ length: 11 }, (_, i) => { const a = -0.8 + 1.6 * i / 10; return [U(pt.u) + rr * Math.cos(a), V(pt.v) + rr * Math.sin(a)]; }), hi ? pc : c.green, hi ? 1.8 : 1, [2, 2]);
+          }
+        }
+      };
+      // a side tube joins the main tube: cut the main tube's lower wall where they meet
+      ex.parts.filter(shown).forEach(drawPart);
+      if (rev && st === 1) g.text('先读懂右边的线路，结构在后面几步画出', SB.x + SB.w / 2, SB.y + SB.h / 2, { color: c.muted, size: 12, align: 'center' });
+      ex.parts.filter(pt => pt.type === 'vtube' && shown(pt)).forEach(pt => {
+        const main = ex.parts.find(q => q.type === 'tube' && Math.abs(q.v - pt.v0) < 1e-6), x = U(pt.u);
+        if (main) { g.rect(x - pt.hw + 1.5, V(pt.v0) + main.hw - 2, 2 * pt.hw - 3, 5, isHi(pt.id) || st >= 4 || rev ? col(pt.col) + '30' : c.bg); }
+      });
+      // labels: step 1 names the parts, step 4 on writes the element symbols
+      ex.parts.filter(shown).forEach(pt => {
+        const hi = isHi(pt.id), pc = col(pt.col);
+        const pos = pt.type === 'cav' ? [U((pt.u0 + pt.u1) / 2), V(pt.v0) - 9] : pt.type === 'tube' ? [U((pt.u0 + pt.u1) / 2), V(pt.v) - pt.hw - 9]
+          : pt.type === 'vtube' ? [U(pt.u) + pt.hw + 6, V((pt.v0 + pt.v1) / 2) + 6] : pt.type === 'open' ? [U(pt.u) + 4, V(pt.v) - 30] : [U((pt.u0 + pt.u1) / 2), V(pt.v0) - 9];
+        const align = pt.type === 'vtube' ? 'left' : 'center';
+        if (!rev && st <= 3) g.text(pt.label, pos[0], pos[1], { color: hi ? pc : c.muted, size: hi ? 12 : 11, bold: hi, align });
+        if (rev ? st >= 2 : st >= 4) {
+          // in a cavity the flow line runs through the centre and down to the wall: write beside it
+          const ovPos = pt.type === 'cav' ? [U((pt.u0 + pt.u1) / 2) + 8, V((pt.v0 + pt.v1) / 2) + 18] : pos;
+          g.text(pt.ov, ovPos[0], ovPos[1], { color: pc, size: 12.5, bold: true, align: pt.type === 'cav' ? 'left' : align });
+        }
+      });
+      // flow lines: drawn out in step 2, then volume flow keeps moving along them
+      if (st >= 2) {
+        const paths = ex.flows.map(f => f.map(([u, v]) => [U(u), V(v)])), lens = paths.map(pp => pp.reduce((s, q, i) => i ? s + Math.hypot(q[0] - pp[i - 1][0], q[1] - pp[i - 1][1]) : 0, 0));
+        let budget = st === 2 ? Math.min(1, dt / 3) * lens.reduce((a, b) => a + b, 0) : Infinity;
+        paths.forEach((pp, i) => {
+          if (budget <= 0) return;
+          const L = lens[i], f = Math.min(1, budget / L); budget -= L;
+          const end = [pp[0][0] + (pp[1][0] - pp[0][0]) * f, pp[0][1] + (pp[1][1] - pp[0][1]) * f];
+          g.line([pp[0], end], c.red, 1.6, [5, 3]);
+          if (f >= 1) { g.arrow(pp[0][0] + (pp[1][0] - pp[0][0]) * 0.55, pp[0][1] + (pp[1][1] - pp[0][1]) * 0.55, pp[0][0] + (pp[1][0] - pp[0][0]) * 0.62, pp[0][1] + (pp[1][1] - pp[0][1]) * 0.62, c.red, 1.6); dots(g, pp, dt * 22, c.red + 'aa', 22); }
+        });
+        if (st === 2) g.text(rev ? '声流线 = 线路中的电流路径：它就是结构的骨架' : '声流线（体积速度 U）', SB.x + SB.w / 2, H - 30, { color: c.red, size: 11, align: 'center' });
+      }
+      // grounds: where the flow ends
+      if (rev ? st >= 5 : st >= 3) ex.grounds.forEach(q => {
+        const x = U(q.u), y = V(q.v), pulse = st === (rev ? 5 : 3) ? 0.5 + 0.5 * Math.sin(dt * 5) : 0;
+        if (pulse) g.circle(x, y + 6, 12 + 3 * pulse, c.green + '33');
+        gnd(g, x, y);
+        g.text(q.text, x + 12, y + 8, { color: c.green, size: 10.5 });
+      });
+      // ---------- right side: the rules, then the circuit ----------
+      if (!rev && st <= 4) {
+        let y = CB.y + 4;
+        AC_RULES.forEach((r, i) => {
+          const on = i + 1 === st, done = i + 1 < st;
+          const lines = []; let cur = '';
+          for (const ch of `${i + 1}. ${r}`) { cur += ch; if (cur.length >= Math.max(10, Math.floor(CB.w / 12.5))) { lines.push(cur); cur = ''; } }
+          if (cur) lines.push(cur);
+          if (on) g.rect(CB.x - 6, y - 9, CB.w + 12, lines.length * 17 + 4, c.accent + '1c');
+          lines.forEach((ln, j) => g.text(ln, CB.x, y + j * 17, { color: on ? c.ink : done ? c.muted : c.muted + 'aa', size: 12, bold: on }));
+          y += lines.length * 17 + 8;
+        });
+        return;
+      }
+      const vis = ex.circuit.filter(e => e.k <= shownK);
+      // ground rail under every element that reaches it, the source included
+      const low = vis.filter(e => e.a[1] > 0.8 || e.b[1] > 0.8).map(e => CX(e.a[0]));
+      if (low.length > 1) { const x0 = Math.min(...low), x1 = Math.max(...low); g.line([[x0, CY(0.85)], [x1, CY(0.85)]], c.ink, 1.4); gnd(g, (x0 + x1) / 2, CY(0.85)); }
+      vis.forEach(e => {
+        const pt = ex.parts.find(q => q.id === e.part), pc = pt ? col(pt.col) : c.ink, [x0, y0, x1, y1] = [CX(e.a[0]), CY(e.a[1]), CX(e.b[0]), CY(e.b[1])];
+        const vertical = Math.abs(x1 - x0) < 1, side = vertical ? (e.kind === 'V' ? 1 : 1) : -1;
+        if (rev ? isHi(e.part) && st < 6 : e.k === shownK && st === 5) g.circle((x0 + x1) / 2, (y0 + y1) / 2, 22 + 3 * Math.sin(dt * 6), pc + '22');
+        if (e.kind === 'LR') { const xm = (x0 + x1) / 2; el(g, 'L', x0, y0, xm, y0, pc, e.label, -1); el(g, 'R', xm, y0, x1, y1, pc, '', -1); }
+        else if (e.kind === 'wire') { g.line([[x0, y0], [x1, y1]], c.ink, 1.4); g.text(e.label, x0 - 6, (y0 + y1) / 2, { color: pc, size: 11, align: 'right' }); }
+        else el(g, e.kind, x0, y0, x1, y1, pc, e.label, side);
+      });
+      ex.nodes.filter(n => n[2] <= shownK).forEach(([u, v]) => g.circle(CX(u), CY(v), 3.5, c.ink));
+      // volume flow in the finished circuit
+      if (st === 6 || rev && st === 2) {
+        const loop = ex.circuit.filter(e => e.kind !== 'wire').map(e => [[CX(e.a[0]), CY(e.a[1])], [CX(e.b[0]), CY(e.b[1])]]);
+        loop.forEach(seg => dots(g, seg, dt * 18, c.red + '99', 18));
+      }
+    },
+    note(p) {
+      const ex = p.ex, st = p.st;
+      if (p.dir === 'rev') return {
+        1: '先读懂线路：哪些是串在支路上的电感、电阻（串臂），哪些是从节点接到地的电容（对地支路），哪里直接接地，节点在哪里。高亮的元件依次扫过。',
+        2: '线路中的电流就是体积速度：从声源出发沿电流路径画出声流线，它决定了结构的骨架——流线经过的地方就是空气流动的通道，分叉处就是结构上的连接处。',
+        3: '串臂上的声质量与声阻（$M$、$R$）→ 一段细管：空气在其中整体运动。$M_a=\\rho_0l/S$：声质量越大，管越细越长。',
+        4: '从节点接到地的声容 $C$ → 一个腔体：空气在其中被压缩，流线终止于腔壁（刚性壁就是“地”）。$C_a=V/(\\rho_0c_0^2)$：声容越大，腔越大。',
+        5: '直接接地的导线或辐射阻 → 通大气的开口；电容接地 → 腔体的刚性壁。没有对地电容的节点 → 体积可以忽略的连接处（例如三通）。',
+        6: `检查：线路中的每个元件都有对应的结构，每个腔体都通过声容接地，每个开口都接地。这正是例 5（由线路画结构）的做法。对应的方程：${AC_EX[ex].eq}`,
+      }[st];
+      const T = {
+        1: { two: '外部声源推动空气进入第一根细管，经腔体 1、细管 2 到达封闭的腔体 2。先分清每一部分是“细管”（空气整体运动，有质量）还是“腔体”（空气被压缩，像弹簧）。', open: '声源推动空气经进口细管进入腔体，腔体另有一根出口细管通向大气。', branch: '主管从声源通到开口；主管中部向下接出一根细管和一个腔体，构成旁支共鸣器。' }[ex],
+        2: '从声源出发，沿体积速度流过的路径画线。到腔体时流线分成两路：一路“压进”腔体（终止于刚性壁，体现腔内空气被压缩），一路继续流向下一个元件。',
+        3: '声学系统中只有压强差有意义，所以把<b>刚性壁</b>（流线终止、腔体被压缩的地方）和<b>大气</b>（开口外的静压）都当作“地”。每条流线都必须终止于某个地。',
+        4: '细管：空气柱整体运动 → 声质量 $M_a=\\rho_0l/S$ 与声阻 $R_a$ 串联；腔体：空气被压缩 → 声容 $C_a=V/(\\rho_0c_0^2)$，一端必定接地；开口：辐射阻抗，常近似为直接接地。',
+        5: '按流线依次放元件：不分支地依次穿过的元件串在同一支路上；流线分叉处成为节点，各分路并联。腔体的声容总是从节点接到地。',
+        6: `${{ two: '两节梯形网络（低通滤波器的雏形）。', open: '腔体声容与出口细管并联在同一节点上。', branch: '主管上的节点接出一条串联谐振支路。' }[ex]}检查：每个腔都有一条对地声容；每个通大气的开口都接地；节点处流入流出的体积速度相等。列回路方程：${AC_EX[ex].eq}`,
+      };
+      return T[st];
+    },
+  };
+
   Object.assign(Demo.DEMO_FOR, {
-    'd-mech-analog': ['analog:imp', 'osc:forced'], 'd-acoustic-analog': ['acnet:two', 'filter:low'], 'd-transformer': 'xformer:xf',
+    'd-mech-analog': ['analog:imp', 'osc:forced'], 'd-acoustic-analog': ['acdraw:two', 'acnet:two'], 'd-transformer': 'xformer:xf',
     'd-filter': ['filter:low', 'acnet:branch'], 'd-helmholtz': ['helmholtz', 'acnet:single'],
   });
   Demo.DEMO_MODEL.lumped = ['helmholtz', 'analog:imp', 'acnet:two'];
