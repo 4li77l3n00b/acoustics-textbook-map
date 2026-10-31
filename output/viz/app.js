@@ -592,6 +592,8 @@ function deriveDetail() {
     <h2>目标</h2><div class="formula">${esc(d.goal)}</div>
     ${window.Demo ? Demo.forDerivation(d.id, DV.demoOpen ?? !DV.recite) : ''}
     ${d.intro ? `<div class="guide"><div class="gl">导读</div>${linkEq(md(d.intro))}</div>` : ''}
+    ${(d.symbols || []).length ? `<details class="dsym"${(DV.symOpen ?? !DV.recite) ? ' open' : ''}><summary>符号说明（${d.symbols.length}）</summary>
+      <div class="symgrid">${d.symbols.map(([tex, mean]) => `<div class="sk">$${esc(tex)}$</div><div class="sv">${linkEq(esc(mean))}</div>`).join('')}</div></details>` : ''}
     ${d.note ? `<div class="notebox">${linkEq(esc(d.note))}</div>` : ''}
     <h2>步骤${DV.recite ? `　<span class="small">已展开 ${Math.min(DV.shown, n)} / ${n}</span>` : ''}</h2>
     <div class="dsteps">${d.steps.map((s, k) => `<div class="dstep${hide(k) ? ' hid' : ''}" data-ds="${k}">
@@ -608,6 +610,7 @@ function deriveDetail() {
   if (window.Demo) {
     Demo.mountAll(el);
     const box = $('details.demo-box', el); if (box) box.addEventListener('toggle', () => { DV.demoOpen = box.open; });
+    const sym = $('details.dsym', el); if (sym) sym.addEventListener('toggle', () => { DV.symOpen = sym.open; });
   }
   $$('#deriveList .row').forEach(r => r.classList.toggle('cur', r.dataset.drow === d.id));
   const cur = $('#deriveList .row.cur'); if (cur) cur.scrollIntoView({ block: 'nearest' });

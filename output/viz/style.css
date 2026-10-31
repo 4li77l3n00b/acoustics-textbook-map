@@ -243,3 +243,10 @@ details.demo-box > summary { cursor: pointer; padding: 8px 12px; font-weight: 60
 .dwhy { margin-top: 6px; padding: 6px 10px; background: var(--hover); border-radius: 6px; font-size: 13.5px; line-height: 1.75; }
 .dwhy p { display: inline; margin: 0; } .dwhy p + p { display: block; margin-top: 4px; }
 .dstep.hid .dwhy { display: none; }
+/* symbols of a derivation: what each letter means, in order of first use */
+details.dsym { margin: 10px 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+details.dsym > summary { cursor: pointer; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--accent); }
+.symgrid { display: grid; grid-template-columns: max-content 1fr max-content 1fr; gap: 3px 10px; padding: 2px 12px 10px; font-size: 13px; line-height: 1.6; align-items: baseline; }
+.symgrid .sk { text-align: right; white-space: nowrap; }
+.symgrid .sv { color: var(--ink); }
+@media (max-width: 900px) { .symgrid { grid-template-columns: max-content 1fr; } }

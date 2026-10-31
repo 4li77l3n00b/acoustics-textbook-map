@@ -59,6 +59,74 @@ def sections(text):
     return out
 
 
+
+# ---------- symbols: which quantities a derivation uses, and what they mean (symbols.md) ----------
+NOT_SYMBOLS = set(r"""\frac \dfrac \tfrac \sqrt \int \oint \iint \partial \nabla \ln \lg \log \exp \sin \cos \tan \cot \sinh \cosh \tanh
+\arcsin \arccos \arctan \pi \infty \left \right \quad \qquad \cdot \times \approx \le \ge \leq \geq \ll \gg \to \sum \prod \lim \max \min
+\Big \big \bigg \Bigg \displaystyle \overline \bar \hat \tilde \vec \dot \ddot \mathcal \boldsymbol \mathbf \circ \pm \mp \ne \neq \propto
+\equiv \sim \cdots \ldots \dots \leftrightarrow \Rightarrow \rightarrow \xrightarrow \iff \in \perp \parallel \angle \deg \Re \Im \mid
+\prime \limits \over \begin \end \not \colon \star \ast \bullet \div \forall \exists \underbrace \overbrace \stackrel \overset
+\underset \mathbb \mathit \lfloor \rfloor \lceil \rceil \land \lor \wedge \vee""".split())
+SYM = re.compile(r"(SPL|SIL|SWL|TL(?![A-Za-z])|\\[A-Za-z]+|[A-Za-z])((?:_(?:\{[^{}]*\}|\\[A-Za-z]+|[A-Za-z0-9])|\^\{?\(?[0-9]+\)?\}?|')*)")
+
+
+def symbol_tokens(text):
+    """Symbols in the $…$ / $$…$$ of a text, in order: 'M_m', '\\xi_{st}', "\\eta'", 'SPL' … Powers are dropped, primes and
+    subscripts kept; j, e, d (imaginary unit, Euler's number, differential) and operator names are not symbols."""
+    out = []
+    for a, b in re.findall(r'\$\$(.+?)\$\$|\$(.+?)\$', text, re.S):
+        m = re.sub(r'\\(?:text|mathrm|operatorname)\{[^}]*\}', ' ', a or b)
+        m = re.sub(r'_\{(\\[A-Za-z]+|[A-Za-z0-9])\}', r'_\1', m)
+        for mm in SYM.finditer(m):
+            base, sub = mm.group(1), re.sub(r'\^\{?\(?[0-9]+\)?\}?', '', mm.group(2))
+            if base in NOT_SYMBOLS or base in ('j', 'e', 'd'):
+                continue
+            out.append(base + sub)
+    return out
+
+
+def symbol_table(path, ids):
+    """symbols.md: '## 通用' and '## d-id' sections of 'TeX | meaning' lines, '~ a b' = tokens that need no entry."""
+    common, per, ignore, errors = [], defaultdict(list), defaultdict(set), []
+    sec = None
+    for ln in path.read_text(encoding='utf-8').splitlines():
+        if ln.startswith('## '):
+            sec = ln[3:].strip()
+            if sec != '通用' and sec not in ids:
+                errors.append(f'symbols: unknown derivation {sec}')
+        elif sec and ln.startswith('~'):
+            ignore[sec].update(ln[1:].split())
+        elif sec and '|' in ln:
+            tex, meaning = (x.strip() for x in ln.split('|', 1))
+            entry = (tex, meaning, set(symbol_tokens(f'${tex}$')))
+            (common if sec == '通用' else per[sec]).append(entry)
+    return common, per, ignore, errors
+
+
+def attach_symbols(derivations, path):
+    """Give each derivation its symbol list (own entries first in priority, then 通用 ones it uses), ordered by first
+    use; returns errors for symbols used without a definition."""
+    common, per, ignore, errors = symbol_table(path, {d['id'] for d in derivations})
+    for d in derivations:
+        text = '\n'.join([d['goal'], d['note'], d['intro']] + [s['body'] + '\n' + s['why'] for s in d['steps']] + [d['outro']])
+        used = symbol_tokens(text)
+        first = {}
+        for i, t in enumerate(used):
+            first.setdefault(t, i)
+        own = per.get(d['id'], [])
+        covered = set().union(*(e[2] for e in own)) if own else set()
+        rows = [e for e in own]
+        for e in common:  # a 通用 entry is added for the used symbols it explains that nothing above already does
+            if (e[2] & set(first)) - covered:
+                rows.append(e); covered |= e[2]
+        missing = sorted(set(first) - covered - ignore[d['id']] - ignore['通用'])
+        if missing:
+            errors.append(f'symbols {d["id"]}: no meaning for {" ".join(missing)}')
+        rows.sort(key=lambda e: min((first[t] for t in e[2] if t in first), default=10**6))
+        d['symbols'] = [[tex, meaning] for tex, meaning, _ in rows]
+    return errors
+
+
 def main():
     eqs = equations()
     errors, snippets, cited = [], [], defaultdict(list)
@@ -166,6 +234,10 @@ def main():
                     d['steps'][int(h) - 1]['why'] = '\n'.join(ln[2:] if ln.startswith('> ') else ln for ln in body.splitlines()).strip()
                 else:
                     errors.append(f'guide {gid}: unknown part {h} ({len(d["steps"])} steps)')
+    errors += attach_symbols(derivations, SRC / 'symbols.md')
+    for d in derivations:
+        for tex, meaning in d['symbols']:
+            text_checks(f'symbols {d["id"]}', f'${tex}$ {meaning}')
     # list derivations in book order (by their first section)
     order = {n['id']: i for i, n in enumerate(json.loads((TB / 'toc.json').read_text(encoding='utf-8'))['nodes'])}
     derivations.sort(key=lambda d: order.get(d['nodes'][0], 10**6) if d['nodes'] else 10**6)
@@ -177,7 +249,7 @@ def main():
     (ROOT / 'tmp/eqrefs.txt').write_text(''.join(f'({k}) {", ".join(sorted(set(v)))}\n    {eqs[k][2]}\n' for k, v in sorted(cited.items(), key=lambda kv: [int(x) if x.isdigit() else x for x in re.split(r'[-a-z]', kv[0]) if x])), encoding='utf-8')
     cells = sum(len(m['steps']) for m in models)
     print(f'{len(models)} models ({cells} cells), {len(relations)} relations, {len(derivations)} derivations '
-          f'({sum(len(d["steps"]) for d in derivations)} steps, {sum(bool(d["intro"]) for d in derivations)} with guided notes), {len(cited)} equations cited, formulas {len(snippets)}, errors {len(errors)}')
+          f'({sum(len(d["steps"]) for d in derivations)} steps, {sum(bool(d["intro"]) for d in derivations)} with guided notes, {sum(len(d["symbols"]) for d in derivations)} symbol rows), {len(cited)} equations cited, formulas {len(snippets)}, errors {len(errors)}')
     for e in errors:
         print('  ', e)
 
