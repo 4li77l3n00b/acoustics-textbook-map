@@ -28,7 +28,27 @@ const Demo = (() => {
     };
     g.line = (pts, color, w = 1.5, dash) => {
       if (pts.length < 2) return;
-      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w; if (dash) ctx.setLineDash(dash);
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w;
+      // a dashed curve y(x): lay the dashes out along x, fixed on the canvas. Canvas dashes follow the arc length from the
+      // first point, so on an animated curve they would crawl sideways, more and more towards the right end.
+      const dx = pts.slice(1).map((q, i) => q[0] - pts[i][0]);
+      if (dash && pts.length > 2 && (dx.every(d => d >= 0) || dx.every(d => d <= 0))) {
+        const q = dx.some(d => d < 0) ? pts.slice().reverse() : pts, on = dash[0], per = dash[0] + (dash[1] ?? dash[0]);
+        let down = false;
+        ctx.beginPath();
+        for (let i = 1; i < q.length; i++) {
+          let [xa, ya] = q[i - 1]; const [xb, yb] = q[i];
+          if (xb - xa < 1e-9) { if (down) ctx.lineTo(xb, yb); continue; }  // vertical piece: follow the pen
+          while (xb - xa > 1e-9) {
+            const ph = ((xa % per) + per) % per, isOn = ph < on, xe = Math.min(xb, xa + (isOn ? on - ph : per - ph)), ye = ya + (yb - ya) * (xe - xa) / (xb - xa);
+            if (isOn) { if (!down) ctx.moveTo(xa, ya); ctx.lineTo(xe, ye); }
+            down = isOn; xa = xe; ya = ye;
+          }
+        }
+        ctx.stroke(); ctx.restore();
+        return;
+      }
+      if (dash) ctx.setLineDash(dash);
       ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
       ctx.stroke(); ctx.restore();
     };
