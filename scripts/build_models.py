@@ -137,7 +137,7 @@ def main():
         if rest.count('$') % 2:
             errors.append(f'{owner}: unbalanced $')
         snippets.extend([[owner, d] for d in disp] + [[owner, m] for m in re.findall(r'\$([^$]+)\$', rest)])
-        for m in EQ.finditer(re.sub(r'\$.+?\$', '', text, flags=re.S)):
+        for m in EQ.finditer(re.sub(r'\$\$.+?\$\$|\$[^$]*\$', '', text, flags=re.S)):  # numbers inside formulas are not citations
             k = f'{m[1]}-{m[2]}-{m[3]}'
             if k not in eqs:
                 errors.append(f'{owner}: equation ({k}) not in the textbook')
