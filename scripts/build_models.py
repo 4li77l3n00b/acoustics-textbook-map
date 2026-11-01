@@ -61,7 +61,7 @@ def sections(text):
 
 
 # ---------- symbols: which quantities a derivation uses, and what they mean (symbols.md) ----------
-NOT_SYMBOLS = set(r"""\frac \dfrac \tfrac \sqrt \int \oint \iint \partial \nabla \ln \lg \log \exp \sin \cos \tan \cot \sinh \cosh \tanh
+NOT_SYMBOLS = set(r"""\frac \dfrac \tfrac \sqrt \int \oint \iint \partial \nabla \ln \lg \log \exp \sin \cos \tan \cot \sinh \cosh \tanh \coth \sec \csc
 \arcsin \arccos \arctan \pi \infty \left \right \quad \qquad \cdot \times \approx \le \ge \leq \geq \ll \gg \to \sum \prod \lim \max \min
 \Big \big \bigg \Bigg \displaystyle \overline \bar \hat \tilde \vec \dot \ddot \mathcal \boldsymbol \mathbf \circ \pm \mp \ne \neq \propto
 \equiv \sim \cdots \ldots \dots \leftrightarrow \Rightarrow \rightarrow \xrightarrow \iff \in \perp \parallel \angle \deg \Re \Im \mid
