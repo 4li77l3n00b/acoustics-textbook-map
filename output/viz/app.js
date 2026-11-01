@@ -21,6 +21,9 @@ const tex = (s, display) => {
   try { return katex.renderToString(s, { throwOnError: false, strict: 'ignore', displayMode: !!display }); } catch (e) { return esc(s); }
 };
 
+// a model / derivation name may contain $…$ (e.g. “等效质量 $M_s/3$”): typeset those parts, escape the rest
+const nameHtml = s => s.split(/\$([^$]+)\$/).map((x, i) => (i % 2 ? tex(x) : esc(x))).join('');
+
 /* ---------- indexes ---------- */
 const NODES = D.book.nodes;
 const nodeById = Object.fromEntries(NODES.map(n => [n.id, n]));
@@ -365,8 +368,8 @@ function examDetail() {
       ${q.notes.length ? `<div class="notebox">${q.notes.map(n => linkQ(esc(n))).join('<br>')}</div>` : ''}
       ${q.type === 'problem' ? `<h2>解答</h2>${solHtml(q.id)}` : ''}
       ${(() => { const ms = q.type === 'problem' ? MODELS.filter(m => mQs(m).includes(q)) : [], ds = DERIVS.filter(d => d.asked.includes(q.id));
-        return ms.length || ds.length ? `<h2>模型与推导</h2><div class="terms">${ms.map(m => `<a class="chip" data-model="${m.id}">模型：${esc(m.name)}</a>`).join('')}
-          ${ds.map(d => `<a class="chip" data-derive="${d.id}">推导默写：${esc(d.name)}</a>`).join('')}</div>` : ''; })()}
+        return ms.length || ds.length ? `<h2>模型与推导</h2><div class="terms">${ms.map(m => `<a class="chip" data-model="${m.id}">模型：${nameHtml(m.name)}</a>`).join('')}
+          ${ds.map(d => `<a class="chip" data-derive="${d.id}">推导默写：${nameHtml(d.name)}</a>`).join('')}</div>` : ''; })()}
       ${q.proto.length ? `<h2>课本原型</h2><ul class="links">${q.proto.map(protoLink).join('')}</ul>` : ''}
       ${(q.nodes || []).length ? `<h2>相关小节</h2><ul class="links">${q.nodes.map(n => `<li>${nodeStars(n)} <a data-kp="${n}">${esc(nodeLabel(n))}</a>
         <div class="muted small">${linkQ(esc((rating(n) || {}).note || ''))}</div></li>`).join('')}</ul>` : ''}
@@ -438,8 +441,8 @@ function kpDetail() {
     ${ts.length ? `<h2>名词（${ts.length}）</h2><ul class="links">${ts.map(e => `<li><a data-term-name="${esc(e.name)}">${esc(e.name)}</a>${e.asked.length ? ` <span class="cnt">考 ${e.asked.length} 次</span>` : ''}
       <div class="muted small">${esc(cut(e.def, 90))}</div></li>`).join('')}</ul>` : ''}
     ${(() => { const ms = MODELS.filter(m => covers(m, id)), ds = DERIVS.filter(d => d.nodes.some(n => under(n, id) || under(id, n)));
-      return ms.length || ds.length ? `<h2>模型与推导</h2><div class="terms">${ms.map(m => `<a class="chip" data-model="${m.id}">模型：${esc(m.name)}</a>`).join('')}
-        ${ds.map(d => `<a class="chip" data-derive="${d.id}">推导：${esc(d.name)}</a>`).join('')}</div>` : ''; })()}
+      return ms.length || ds.length ? `<h2>模型与推导</h2><div class="terms">${ms.map(m => `<a class="chip" data-model="${m.id}">模型：${nameHtml(m.name)}</a>`).join('')}
+        ${ds.map(d => `<a class="chip" data-derive="${d.id}">推导：${nameHtml(d.name)}</a>`).join('')}</div>` : ''; })()}
     ${qs.length ? `<h2>真题（${qs.length}）</h2><ul class="links">${qs.map(q => { const s = solOf(q.id); return `<li><a data-q="${q.id}">${q.id}</a> ${esc(cut(q.type === 'term' ? '名词解释' : q.text.split('\n')[0], 50))}
       ${s ? `<div class="muted small">答：${esc(cut(s.answer, 110))}</div>` : ''}</li>`; }).join('')}</ul>` : ''}
     ${xs.length ? `<h2>习题（${xs.length}）</h2><ul class="links">${xs.map(x => { const l = EXLV[x.id] || {}, s = solOf(x.id); return `<li><a data-q="${x.id}">习题 ${x.id}</a> <span class="lv lv-${l.level}">${l.level || ''}</span>
@@ -506,7 +509,7 @@ function modelList() {
     if (c !== ch) { ch = c; h += `<div class="grp">${esc(nodeLabel(c))}</div>`; }
     MV.order.push(m.id);
     const nq = mQs(m).length, nd = mDerivs(m).length;
-    h += `<div class="row${MV.cur === m.id ? ' cur' : ''}" data-mrow="${m.id}"><div class="nm"><div>${esc(m.name)}</div>
+    h += `<div class="row${MV.cur === m.id ? ' cur' : ''}" data-mrow="${m.id}"><div class="nm"><div>${nameHtml(m.name)}</div>
       <div class="sub">${[nq && `真题 ${nq}`, nd && `推导 ${nd}`, `关系 ${mRels(m).length}`].filter(Boolean).join(' · ')}</div></div>${stars({ stars: mStars(m) })}</div>`;
   });
   $('.rows', box).innerHTML = h;
@@ -515,7 +518,7 @@ function matrixHtml() {
   return `<h1 class="ttl">模型 × 解题环节</h1>
     <p class="muted small">每个物理模型都按同一套环节求解：条件 → 方程 → 边界 → 解 → 能量 → 阻抗 → 特性。横着看是一个模型的完整解法，竖着看是同一环节在不同模型里的形式。点格子打开该模型。</p>
     <div class="mxwrap"><table class="mx"><tr><th>模型</th>${MD.steps.map(s => `<th>${s}</th>`).join('')}<th>真题</th></tr>
-    ${MODELS.map(m => `<tr><td class="mn"><a data-model="${m.id}">${esc(m.name)}</a> ${stars({ stars: mStars(m) })}</td>${MD.steps.map(s => m.steps[s]
+    ${MODELS.map(m => `<tr><td class="mn"><a data-model="${m.id}">${nameHtml(m.name)}</a> ${stars({ stars: mStars(m) })}</td>${MD.steps.map(s => m.steps[s]
       ? `<td data-model="${m.id}" data-mstep="${s}">${esc(m.steps[s].short)}</td>` : '<td class="none">—</td>').join('')}<td>${mQs(m).length || ''}</td></tr>`).join('')}</table></div>`;
 }
 function relHtml() {
@@ -531,7 +534,7 @@ function modelCard(m) {
   const i = MV.order.indexOf(m.id);
   const qs = mQs(m), xs = mEx(m), ds = mDerivs(m), rels = mRels(m);
   return `<div class="meta"><button data-mstepnav="-1" ${i <= 2 ? 'disabled' : ''}>↑ 上一个</button><button data-mstepnav="1" ${i < 0 || i >= MV.order.length - 1 ? 'disabled' : ''}>下一个 ↓</button></div>
-    <h1 class="ttl">${esc(m.name)} ${stars({ stars: mStars(m) })}</h1>
+    <h1 class="ttl">${nameHtml(m.name)} ${stars({ stars: mStars(m) })}</h1>
     <div class="def" style="font-size:15px">${linkEq(esc(m.brief))}</div>
     ${window.Demo ? Demo.forModel(m.id, true) : ''}
     <div class="meta">${m.nodes.map(n => `<a class="chip" data-kp="${n}">${esc(nodeLabel(n))}</a>`).join('')}</div>
@@ -539,7 +542,7 @@ function modelCard(m) {
       <div class="short">${esc(m.steps[s].short)}</div><div class="solbody">${linkEq(md(m.steps[s].body))}</div></div></div>` : '').join('')}</div>
     ${rels.length ? `<h2>与其他模型的关系</h2><ul class="rels">${rels.map(r => { const o = r.a === m.id ? r.b : r.a;
       return `<li><div class="pair"><span class="chip">${r.kind}</span> ${r.kind === '退化' ? (r.a === m.id ? '→ ' : '← ') : ''}${mLink(o)}</div><div class="rtext">${linkEq(esc(r.text))}</div></li>`; }).join('')}</ul>` : ''}
-    ${ds.length ? `<h2>推导默写（${ds.length}）</h2><ul class="links">${ds.map(d => `<li><a data-derive="${d.id}">${esc(d.name)}</a>${d.asked.length ? ` <span class="cnt">考 ${d.asked.length} 次</span>` : ''}</li>`).join('')}</ul>` : ''}
+    ${ds.length ? `<h2>推导默写（${ds.length}）</h2><ul class="links">${ds.map(d => `<li><a data-derive="${d.id}">${nameHtml(d.name)}</a>${d.asked.length ? ` <span class="cnt">考 ${d.asked.length} 次</span>` : ''}</li>`).join('')}</ul>` : ''}
     ${qs.length ? `<h2>真题（${qs.length}）</h2><ul class="links">${qs.map(q => { const s = solOf(q.id); return `<li><a data-q="${q.id}">${q.id}</a> ${esc(cut(q.text.split('\n')[0], 50))}
       ${s ? `<div class="muted small">答：${esc(cut(s.answer, 110))}</div>` : ''}</li>`; }).join('')}</ul>` : ''}
     ${xs.length ? `<h2>必做习题（${xs.length}）</h2><ul class="links">${xs.map(x => { const s = solOf(x.id); return `<li><a data-q="${x.id}">习题 ${x.id}</a>
@@ -584,7 +587,7 @@ function deriveList() {
   ds.forEach(d => {
     const c = d.nodes[0].split('/').slice(0, 2).join('/');
     if (c !== ch) { ch = c; h += `<div class="grp">${esc(nodeLabel(c))}</div>`; }
-    h += `<div class="row${DV.cur === d.id ? ' cur' : ''}" data-drow="${d.id}"><span class="dot ${dLast(d) || ''}"></span><div class="nm"><div>${esc(d.name)}</div>
+    h += `<div class="row${DV.cur === d.id ? ' cur' : ''}" data-drow="${d.id}"><span class="dot ${dLast(d) || ''}"></span><div class="nm"><div>${nameHtml(d.name)}</div>
       <div class="sub">${DREAD[d.id] ? '✓ 已读 · ' : ''}${d.steps.length} 步 · ${esc(d.nodes.map(n => nodeById[n].num).join(' '))}</div></div>${d.asked.length ? `<span class="cnt">考 ${d.asked.length} 次</span>` : ''}</div>`;
   });
   $('.rows', box).innerHTML = h;
@@ -598,7 +601,7 @@ function deriveDetail() {
   const bookLink = b => b ? `<a class="dbook" data-read="${b.p}" data-blk="${b.blk}" title="${b.own ? `在书中查看这一步的推导（式 (${b.eq}) 处）` : '这一步没有引用式号：打开上一步所在位置，往后读即是'}">书中第 ${PAGE[b.p].printed} 页${b.own ? '' : ' 附近'} →</a>` : '';
   el.innerHTML = `<div class="inner${DV.recite ? ' drecite' : ''}">
     <div class="meta"><button data-dnav="-1" ${i <= 0 ? 'disabled' : ''}>↑ 上一条</button><button data-dnav="1" ${i < 0 || i >= DV.order.length - 1 ? 'disabled' : ''}>下一条 ↓</button></div>
-    <h1 class="ttl">${esc(d.name)}</h1>
+    <h1 class="ttl">${nameHtml(d.name)}</h1>
     <div class="meta">${d.asked.length ? `<span class="muted small">考过：</span>${d.asked.map(q => `<a class="chip" data-q="${q}">${q}</a>`).join('')}` : '<span class="muted small">真题未直接要求推导</span>'}</div>
     <div class="meta"><span class="muted small">模型：</span>${d.models.map(m => `<a class="chip" data-model="${m}">${esc(mById[m].name)}</a>`).join('')}
       <span class="muted small">教材：</span>${d.nodes.map(x => `<a class="chip" data-kp="${x}">${esc(nodeLabel(x))}</a>`).join('')}</div>
