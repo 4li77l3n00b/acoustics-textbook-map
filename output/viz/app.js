@@ -474,7 +474,7 @@ function stepBook(d) {
   const nd = nodeById[d.nodes[0]];
   let at = nd ? { blk: nd.anchor, p: nd.pdf_page, own: false } : null;
   return d.steps.map(s => {
-    const k = [...s.body.replace(/\$[^$]*\$/g, '').matchAll(/[（(](\d{1,2}-\d{1,2}-\d{1,3}[a-z]?)[)）]/g)].map(m => m[1]).find(k => EQS[k]);
+    const k = [...(s.body + ' ' + (s.detail || '')).replace(/\$[^$]*\$/g, '').matchAll(/[（(](\d{1,2}-\d{1,2}-\d{1,3}[a-z]?)[)）]/g)].map(m => m[1]).find(k => EQS[k]);
     at = k ? { blk: EQS[k][0], p: EQS[k][1], own: true, eq: k } : at && { ...at, own: false };
     return at;
   });
@@ -566,7 +566,7 @@ function modelStep(d) {
 }
 $('#modelDetail').addEventListener('click', e => { const s = e.target.closest('[data-mstepnav]'); if (s) modelStep(+s.dataset.mstepnav); });
 
-const DV = { filter: store.get('dFilter', ''), recite: store.get('dRecite', false), cur: null, order: [], shown: 0 };
+const DV = { filter: store.get('dFilter', ''), recite: store.get('dRecite', false), cur: null, order: [], shown: 0, detailAll: store.get('dDetail', false) };
 const DMASTER = store.get('dmastery', {});   // derivation id -> { ok, miss, last }
 const dLast = d => (DMASTER[d.id] || {}).last;
 const DREAD = store.get('dread', {});   // derivation id -> true once read through in guided mode
@@ -611,10 +611,10 @@ function deriveDetail() {
     ${(d.symbols || []).length ? `<details class="dsym"${(DV.symOpen ?? !DV.recite) ? ' open' : ''}><summary>符号说明（${d.symbols.length}）</summary>
       <div class="symgrid">${d.symbols.map(([tex, mean]) => `<div class="sk">$${esc(tex)}$</div><div class="sv">${linkEq(esc(mean))}</div>`).join('')}</div></details>` : ''}
     ${d.note ? `<div class="notebox">${linkEq(esc(d.note))}</div>` : ''}
-    <h2>步骤${DV.recite ? `　<span class="small">已展开 ${Math.min(DV.shown, n)} / ${n}</span>` : ''}</h2>
+    <h2>步骤${DV.recite ? `　<span class="small">已展开 ${Math.min(DV.shown, n)} / ${n}</span>` : ''}${d.steps.some(s => s.detail) ? `<button id="ddetAll" class="small" title="每一步下面的完整中间过程">${DV.detailAll ? '收起全部详细推导' : '展开全部详细推导'}</button>` : ''}</h2>
     <div class="dsteps">${d.steps.map((s, k) => `<div class="dstep${hide(k) ? ' hid' : ''}" data-ds="${k}">
       <div class="dh"><span class="dn">${k + 1}</span><span class="dt">${esc(s.title.replace(/^\d+\.\s*/, ''))}</span><span class="dph">先回忆这一步，再点开（空格）</span>${bookLink(book[k])}</div>
-      <div class="db solbody">${linkEq(md(s.body))}</div>${s.why && !DV.recite ? `<div class="dwhy"><span class="gl">讲解</span>${linkEq(md(s.why))}</div>` : ''}</div>`).join('')}</div>
+      <div class="db solbody">${linkEq(md(s.body))}</div>${s.detail ? `<details class="ddet"${DV.detailAll ? ' open' : ''}><summary>详细推导</summary><div class="solbody">${linkEq(md(s.detail))}</div></details>` : ''}${s.why && !DV.recite ? `<div class="dwhy"><span class="gl">讲解</span>${linkEq(md(s.why))}</div>` : ''}</div>`).join('')}</div>
     ${d.outro && (!DV.recite || DV.shown >= n) ? `<h2>理解与联系</h2><div class="guide outro">${linkEq(md(d.outro))}</div>` : ''}
     ${DV.recite ? `<div class="meta" style="margin-top:14px">${DV.shown < n ? '<button id="dnext">显示下一步（空格）</button><button id="dall">全部显示</button>'
       : `<span class="muted small">这一条：</span><button id="dok">记住了（1）</button><button id="dmiss">没记住（2）</button>`}
@@ -655,7 +655,11 @@ function deriveStep(d) {
 }
 $('#deriveDetail').addEventListener('click', e => {
   const t = e.target;
-  if (t.id === 'dnext') deriveReveal(false);
+  if (t.id === 'ddetAll') {  // brief steps by default; the full working opens for all steps at once and stays so
+    DV.detailAll = !DV.detailAll; store.put('dDetail', DV.detailAll);
+    $$('#deriveDetail details.ddet').forEach(x => { x.open = DV.detailAll; });
+    t.textContent = DV.detailAll ? '收起全部详细推导' : '展开全部详细推导';
+  } else if (t.id === 'dnext') deriveReveal(false);
   else if (t.id === 'dall') deriveReveal(true);
   else if (t.id === 'dread') {
     DREAD[DV.cur] = true; store.put('dread', DREAD);

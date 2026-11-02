@@ -175,6 +175,13 @@ a.eq { white-space: nowrap; }
 .dstep.hid .dph { display: inline; }
 .dstep .dbook { margin-left: auto; font-size: 12px; font-weight: 400; white-space: nowrap; }
 .dstep.hid .dbook { display: none; }
+/* full working of a step, under the brief version */
+details.ddet { margin-top: 6px; border-left: 2px solid var(--line); padding-left: 10px; }
+details.ddet > summary { cursor: pointer; font-size: 12.5px; color: var(--accent); user-select: none; }
+details.ddet[open] > summary { margin-bottom: 2px; }
+details.ddet .solbody p { margin: 4px 0; }
+.dstep.hid .ddet { display: none; }
+#ddetAll { margin-left: 12px; font-size: 12px; font-weight: 400; vertical-align: middle; }
 .dstep.hid ~ .dstep.hid { cursor: default; opacity: .6; }
 @media (max-width: 1250px) { #topnote { display: none; } }
 @media (max-width: 1000px) { .brand { display: none; } #tabs a { padding: 6px 9px; font-size: 14px; } .list { width: 300px; } }

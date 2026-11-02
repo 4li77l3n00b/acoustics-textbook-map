@@ -108,7 +108,7 @@ def attach_symbols(derivations, path):
     use; returns errors for symbols used without a definition."""
     common, per, ignore, errors = symbol_table(path, {d['id'] for d in derivations})
     for d in derivations:
-        text = '\n'.join([d['goal'], d['note'], d['intro']] + [s['body'] + '\n' + s['why'] for s in d['steps']] + [d['outro']])
+        text = '\n'.join([d['goal'], d['note'], d['intro']] + [s['body'] + '\n' + s.get('detail', '') + '\n' + s['why'] for s in d['steps']] + [d['outro']])
         used = symbol_tokens(text)
         first = {}
         for i, t in enumerate(used):
@@ -234,6 +234,18 @@ def main():
                     d['steps'][int(h) - 1]['why'] = '\n'.join(ln[2:] if ln.startswith('> ') else ln for ln in body.splitlines()).strip()
                 else:
                     errors.append(f'guide {gid}: unknown part {h} ({len(d["steps"])} steps)')
+    # full working of each step (details.md): "## d-id", "### n" → steps[n-1].detail, shown collapsed under the brief step
+    for gid, f, parts in sections((SRC / 'details.md').read_text(encoding='utf-8')):
+        d = did_of.get(gid)
+        if not d:
+            errors.append(f'details: unknown derivation {gid}')
+            continue
+        for h, body in parts:
+            text_checks(f'details {gid}/{h}', body)
+            if h.isdigit() and 1 <= int(h) <= len(d['steps']):
+                d['steps'][int(h) - 1]['detail'] = body
+            else:
+                errors.append(f'details {gid}: unknown step {h} ({len(d["steps"])} steps)')
     errors += attach_symbols(derivations, SRC / 'symbols.md')
     for d in derivations:
         for tex, meaning in d['symbols']:
@@ -249,7 +261,7 @@ def main():
     (ROOT / 'tmp/eqrefs.txt').write_text(''.join(f'({k}) {", ".join(sorted(set(v)))}\n    {eqs[k][2]}\n' for k, v in sorted(cited.items(), key=lambda kv: [int(x) if x.isdigit() else x for x in re.split(r'[-a-z]', kv[0]) if x])), encoding='utf-8')
     cells = sum(len(m['steps']) for m in models)
     print(f'{len(models)} models ({cells} cells), {len(relations)} relations, {len(derivations)} derivations '
-          f'({sum(len(d["steps"]) for d in derivations)} steps, {sum(bool(d["intro"]) for d in derivations)} with guided notes, {sum(len(d["symbols"]) for d in derivations)} symbol rows), {len(cited)} equations cited, formulas {len(snippets)}, errors {len(errors)}')
+          f'({sum(len(d["steps"]) for d in derivations)} steps, {sum(bool(d["intro"]) for d in derivations)} with guided notes, {sum("detail" in s for d in derivations for s in d["steps"])} with full working, {sum(len(d["symbols"]) for d in derivations)} symbol rows), {len(cited)} equations cited, formulas {len(snippets)}, errors {len(errors)}')
     for e in errors:
         print('  ', e)
 
