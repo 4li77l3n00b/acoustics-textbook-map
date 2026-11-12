@@ -69,6 +69,8 @@ const cut = (s, n) => {
   if ((t.match(/\$/g) || []).length % 2) t = t.slice(0, t.lastIndexOf('$'));
   return t + '…';
 };
+// an exercise's text without its leading number (“4-25 ”, “4－25”, “5~18 ”: the book is not consistent about dash and space)
+const exStem = t => t.replace(/^\s*\d+\s*[-－~～–]\s*\d+\s*/, '');
 
 /* page-image crop of a block (with its merged regions), used on term cards */
 function snip(uid, scale = 0.62) {
@@ -227,7 +229,7 @@ function syllabusPage() {
     const cnt = k => xs.filter(x => (EXLV[x.id] || {}).level === k).length;
     h += `<details class="ch"><summary>第 ${ch.num} 章 ${esc(ch.title)} <span class="muted small">必做 ${cnt('必做')} · 选做 ${cnt('选做')} · 跳过 ${cnt('跳过')}</span></summary>` +
       xs.map(x => { const l = EXLV[x.id] || {}; return `<div class="exrow"><a data-read="${x.pdf_pages[0]}" data-blk="${x.start}">习题 ${x.id}</a><span class="lv lv-${l.level}">${l.level || ''}</span>
-        <span>${esc(cut(x.text.split('\n')[0].replace(/^\S+\s*/, ''), 90))}<br><span class="muted small">${linkQ(esc(l.reason || ''))}</span></span></div>`; }).join('') + '</details>';
+        <span>${esc(cut(exStem(x.text).split('\n')[0], 90))}<br><span class="muted small">${linkQ(esc(l.reason || ''))}</span></span></div>`; }).join('') + '</details>';
   });
   el.innerHTML = h;
   math(el);
@@ -317,7 +319,7 @@ function examList() {
         n++; EV.order.push(x.id);
         const l = EXLV[x.id] || {};
         h += `<div class="row${EV.cur === x.id ? ' cur' : ''}" data-qrow="${x.id}"><b style="flex:none">${x.id}</b>
-          <div class="nm"><div class="sub" style="color:var(--ink);font-size:13px">${esc(cut(x.text.replace(/^\S+\s*/, ''), 60))}</div>
+          <div class="nm"><div class="sub" style="color:var(--ink);font-size:13px">${esc(cut(exStem(x.text), 60))}</div>
           <div class="sub"><span class="lv lv-${l.level}">${l.level}</span> ${esc(cut(l.reason || '', 36))}</div></div>
           ${SOL[x.id] ? '<span class="cnt" title="有解答">解</span>' : ''}</div>`;
       });
@@ -339,7 +341,7 @@ function navBar(id) {
 function exerciseDetail(x) {
   const l = EXLV[x.id] || {};
   const used = QS.filter(q => q.proto.includes(x.id));
-  const text = x.text.replace(/^\S+\s*/, '').split('\n').map(t => `<p>${esc(t)}</p>`).join('');
+  const text = exStem(x.text).split('\n').map(t => `<p>${esc(t)}</p>`).join('');
   return `${navBar(x.id)}
     <h1 class="ttl">习题 ${x.id} <span class="lv lv-${l.level}">${l.level || ''}</span></h1>
     <div class="meta"><span class="muted small">第 ${x.chapter} 章 · ${esc(l.reason || '')}</span></div>
@@ -446,7 +448,7 @@ function kpDetail() {
     ${qs.length ? `<h2>真题（${qs.length}）</h2><ul class="links">${qs.map(q => { const s = solOf(q.id); return `<li><a data-q="${q.id}">${q.id}</a> ${esc(cut(q.type === 'term' ? '名词解释' : q.text.split('\n')[0], 50))}
       ${s ? `<div class="muted small">答：${esc(cut(s.answer, 110))}</div>` : ''}</li>`; }).join('')}</ul>` : ''}
     ${xs.length ? `<h2>习题（${xs.length}）</h2><ul class="links">${xs.map(x => { const l = EXLV[x.id] || {}, s = solOf(x.id); return `<li><a data-q="${x.id}">习题 ${x.id}</a> <span class="lv lv-${l.level}">${l.level || ''}</span>
-      <div class="muted small">${esc(cut(x.text.replace(/^\S+\s*/, ''), 70))}${s ? `<br>答：${esc(cut(s.answer, 100))}` : ''}</div></li>`; }).join('')}</ul>` : ''}
+      <div class="muted small">${esc(cut(exStem(x.text), 70))}${s ? `<br>答：${esc(cut(s.answer, 100))}` : ''}</div></li>`; }).join('')}</ul>` : ''}
     ${egs.length ? `<h2>例题（${egs.length}）</h2><ul class="links">${egs.map(e => { const l = EGLV[e.id] || {}; return `<li><a data-read="${e.pdf_pages[0]}" data-blk="${e.start}">${esc(e.title)}</a> ${l.level ? `<span class="lv lv-${l.level}">${l.level}</span>` : ''}</li>`; }).join('')}</ul>` : ''}
     ${!ts.length && !qs.length && !xs.length && !egs.length ? '<p class="muted">这一节还没有关联的名词、真题或习题。</p>' : ''}
   </div>`;
@@ -546,7 +548,7 @@ function modelCard(m) {
     ${qs.length ? `<h2>真题（${qs.length}）</h2><ul class="links">${qs.map(q => { const s = solOf(q.id); return `<li><a data-q="${q.id}">${q.id}</a> ${esc(cut(q.text.split('\n')[0], 50))}
       ${s ? `<div class="muted small">答：${esc(cut(s.answer, 110))}</div>` : ''}</li>`; }).join('')}</ul>` : ''}
     ${xs.length ? `<h2>必做习题（${xs.length}）</h2><ul class="links">${xs.map(x => { const s = solOf(x.id); return `<li><a data-q="${x.id}">习题 ${x.id}</a>
-      <div class="muted small">${esc(cut(x.text.replace(/^\S+\s*/, ''), 70))}${s ? `<br>答：${esc(cut(s.answer, 100))}` : ''}</div></li>`; }).join('')}</ul>` : ''}`;
+      <div class="muted small">${esc(cut(exStem(x.text), 70))}${s ? `<br>答：${esc(cut(s.answer, 100))}` : ''}</div></li>`; }).join('')}</ul>` : ''}`;
 }
 function modelDetail(step) {
   const el = $('#modelDetail');
