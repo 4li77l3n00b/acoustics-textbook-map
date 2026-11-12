@@ -12,6 +12,7 @@ cites the question id (评级.md) or when the question's prototype lies in that 
 from collections import defaultdict
 from pathlib import Path
 import json
+import sys
 import re
 
 from PIL import Image
@@ -27,6 +28,14 @@ def main():
     blocks = [json.loads(ln) for ln in (TB / 'blocks.jsonl').open(encoding='utf-8')]
     examples = load(TB / 'examples.json')
     exercises = load(TB / 'exercises.json')
+    # corrections of exercise text the OCR got wrong (lost primes, misread symbols), checked against the page images
+    fp = TB / 'exercise_fixes.json'
+    fixes = {k: v for k, v in load(fp).items() if not k.startswith('_')} if fp.exists() else {}
+    for x in exercises:
+        for old, new in fixes.get(x['id'], []):
+            if old not in x['text']:
+                sys.exit(f'exercise_fixes: {x["id"]}: text not found: {old}')
+            x['text'] = x['text'].replace(old, new)
     exams = load(ROOT / 'output/exams/exams.json')
     syl = load(ROOT / 'output/syllabus/syllabus.json')
     glossary = load(ROOT / 'output/glossary/glossary.json')
